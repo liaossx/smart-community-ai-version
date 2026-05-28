@@ -1,0 +1,1 @@
+ALTER TABLE sys_user ADD COLUMN balance DECIMAL(10, 2) DEFAULT 0.00 COMMENT '账户余额';

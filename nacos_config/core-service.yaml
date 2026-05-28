@@ -1,0 +1,72 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:192.168.10.101}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2B8&useSSL=false
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:1234}
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+  redis:
+    host: ${REDIS_HOST:192.168.10.101}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:1234}
+    timeout: 10000
+    database: 0
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: 3000ms
+  rabbitmq:
+    host: ${RABBITMQ_HOST:192.168.10.101}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:192.168.10.101:8858}
+        port: 8719
+      eager: true
+
+mybatis-plus:
+  mapper-locations: classpath*:com/lsx/*/mapper/*.xml
+  type-aliases-package: com.lsx.user.entity,com.lsx.house.entity,com.lsx.workorder.repair.entity,com.lsx.system.entity,com.lsx.property.property.entity,com.lsx.community.activity.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    root: info
+    com.lsx: debug
+    com.lsx.core.mapper: debug
+
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+  openapi:
+    title: 智慧社区管理系统 API
+    description: 基于 Spring Cloud Alibaba 的智慧社区微服务系统
+    version: 1.0
+    contact:
+      name: lsx
+      email: 2428513271@qq.com
+
+jwt:
+  secret: ${JWT_SECRET:mySecretKeyForJWTGenerationInSmartCommunitySystem2024}
+  expiration: 86400000
+
+internal:
+  token: ${INTERNAL_TOKEN:dev-internal-token}
+
+mock:
+  payment:
+    enabled: ${MOCK_PAYMENT_ENABLED:false}

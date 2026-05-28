@@ -1,0 +1,196 @@
+{
+  "说明": "停车管理系统接口测试数据（按测试顺序排列）",
+  
+  "第一步_准备基础数据": {
+    "说明": "需要在数据库中执行 parking-init-data.sql 初始化车位数据"
+  },
+
+  "第二步_车位管理接口": {
+    
+    "1_查询可用车位数量": {
+      "接口": "GET /api/parking/space/remaining",
+      "测试1_查询所有": {
+        "url": "http://localhost:8081/api/parking/space/remaining",
+        "参数": "无"
+      },
+      "测试2_查询指定小区": {
+        "url": "http://localhost:8081/api/parking/space/remaining?communityId=1",
+        "参数": "communityId=1"
+      }
+    },
+
+    "2_绑定固定车位": {
+      "接口": "POST /api/parking/space/bind",
+      "测试数据1": {
+        "spaceId": 9,
+        "userId": 1,
+        "houseId": 1,
+        "leaseEndTime": "2025-12-31T23:59:59"
+      },
+      "测试数据2": {
+        "spaceId": 10,
+        "userId": 2,
+        "houseId": 2,
+        "leaseEndTime": "2025-12-31T23:59:59"
+      },
+      "测试数据3": {
+        "spaceId": 11,
+        "userId": 1,
+        "houseId": 1,
+        "leaseEndTime": "2026-01-31T23:59:59"
+      }
+    },
+
+    "3_查询我绑定的车位": {
+      "接口": "GET /api/parking/space/my",
+      "测试数据": {
+        "url": "http://localhost:8081/api/parking/space/my?userId=1",
+        "参数": "userId=1"
+      }
+    },
+
+    "4_授权车位给访客": {
+      "接口": "POST /api/parking/space/{spaceId}/authorize",
+      "测试数据1_授权给访客A": {
+        "url": "http://localhost:8081/api/parking/space/9/authorize",
+        "body": {
+          "userId": 1,
+          "authorizedName": "张三",
+          "authorizedPhone": "13800138001",
+          "plateNo": "京A12345",
+          "endTime": "2025-01-20T23:59:59"
+        }
+      },
+      "测试数据2_授权给访客B": {
+        "url": "http://localhost:8081/api/parking/space/9/authorize",
+        "body": {
+          "userId": 1,
+          "authorizedName": "李四",
+          "authorizedPhone": "13800138002",
+          "plateNo": "京B88888",
+          "endTime": "2025-01-25T23:59:59"
+        }
+      },
+      "测试数据3_授权给访客C": {
+        "url": "http://localhost:8081/api/parking/space/10/authorize",
+        "body": {
+          "userId": 2,
+          "authorizedName": "王五",
+          "authorizedPhone": "13800138003",
+          "plateNo": "京C66666",
+          "endTime": "2025-01-30T23:59:59"
+        }
+      }
+    },
+
+    "5_查询我的授权记录": {
+      "接口": "GET /api/parking/authorize/my",
+      "测试数据": {
+        "url": "http://localhost:8081/api/parking/authorize/my?userId=1&pageNum=1&pageSize=10",
+        "参数": "userId=1&pageNum=1&pageSize=10"
+      }
+    }
+  },
+
+  "第三步_停车订单接口": {
+    
+    "1_创建临时停车订单": {
+      "接口": "POST /api/parking/order",
+      "测试数据1_临时停车2小时": {
+        "userId": 1,
+        "orderType": "TEMP",
+        "amount": 10.00,
+        "startTime": "2025-01-15T09:00:00",
+        "endTime": "2025-01-15T11:00:00",
+        "remark": "京A12345"
+      },
+      "测试数据2_临时停车半天": {
+        "userId": 2,
+        "orderType": "TEMP",
+        "amount": 25.00,
+        "startTime": "2025-01-15T08:00:00",
+        "endTime": "2025-01-15T14:00:00",
+        "remark": "临时停车半天"
+      },
+      "测试数据3_临时停车全天": {
+        "userId": 3,
+        "orderType": "TEMP",
+        "amount": 50.00,
+        "startTime": "2025-01-15T08:00:00",
+        "endTime": "2025-01-15T20:00:00",
+        "remark": "临时停车全天"
+      }
+    },
+
+    "2_创建固定车位订单": {
+      "接口": "POST /api/parking/order",
+      "测试数据1_固定车位月租": {
+        "userId": 1,
+        "spaceId": 9,
+        "orderType": "FIXED",
+        "amount": 300.00,
+        "startTime": "2025-02-01T00:00:00",
+        "endTime": "2025-02-28T23:59:59",
+        "remark": "2月固定车位月租"
+      },
+      "测试数据2_固定车位季度租": {
+        "userId": 2,
+        "spaceId": 10,
+        "orderType": "FIXED",
+        "amount": 800.00,
+        "startTime": "2025-02-01T00:00:00",
+        "endTime": "2025-04-30T23:59:59",
+        "remark": "Q1季度固定车位租金"
+      }
+    },
+
+    "3_支付停车订单": {
+      "接口": "PUT /api/parking/order/{orderId}/pay",
+      "测试数据1_微信支付": {
+        "url": "http://localhost:8081/api/parking/order/1/pay",
+        "body": {
+          "userId": 1,
+          "payChannel": "WECHAT",
+          "payRemark": "微信支付-交易号：wx2025011514300001"
+        }
+      },
+      "测试数据2_支付宝支付": {
+        "url": "http://localhost:8081/api/parking/order/2/pay",
+        "body": {
+          "userId": 2,
+          "payChannel": "ALIPAY",
+          "payRemark": "支付宝支付-交易号：2025011514300001"
+        }
+      },
+      "测试数据3_现金支付": {
+        "url": "http://localhost:8081/api/parking/order/3/pay",
+        "body": {
+          "userId": 3,
+          "payChannel": "CASH",
+          "payRemark": "现金支付-已收讫"
+        }
+      }
+    },
+
+    "4_查询我的订单列表": {
+      "接口": "GET /api/parking/order/my",
+      "测试数据": {
+        "url": "http://localhost:8081/api/parking/order/my?userId=1&pageNum=1&pageSize=10",
+        "参数": "userId=1&pageNum=1&pageSize=10"
+      }
+    }
+  },
+
+  "注意事项": {
+    "1": "所有 userId、houseId、spaceId 都需要是数据库中已存在的数据",
+    "2": "固定车位订单必须提供 spaceId，且该车位必须已绑定给该用户",
+    "3": "支付订单时，订单ID需要通过创建订单接口返回获取",
+    "4": "时间格式使用 ISO 8601：yyyy-MM-ddTHH:mm:ss",
+    "5": "金额使用数字格式，支持小数",
+    "6": "支付渠道只能是：WECHAT、ALIPAY、CASH",
+    "7": "orderType 只能是：TEMP、FIXED"
+  }
+}
+
+
+

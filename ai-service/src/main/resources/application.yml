@@ -1,0 +1,71 @@
+server:
+  port: ${AI_SERVICE_PORT:8090}
+
+spring:
+  application:
+    name: ai-service
+  ai:
+    retry:
+      max-attempts: ${AI_RETRY_MAX_ATTEMPTS:2}
+      backoff:
+        initial-interval: ${AI_RETRY_BACKOFF_INITIAL_INTERVAL:500ms}
+        multiplier: ${AI_RETRY_BACKOFF_MULTIPLIER:2}
+        max-interval: ${AI_RETRY_BACKOFF_MAX_INTERVAL:2s}
+    openai:
+      api-key: ${AI_OPENAI_API_KEY:}
+      base-url: ${AI_OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        completions-path: ${AI_OPENAI_CHAT_COMPLETIONS_PATH:/v1/chat/completions}
+        options:
+          model: ${AI_OPENAI_CHAT_MODEL:gpt-4.1-mini}
+          temperature: ${AI_OPENAI_TEMPERATURE:0.1}
+      embedding:
+        api-key: ${AI_EMBEDDING_OPENAI_API_KEY:${AI_OPENAI_API_KEY:}}
+        base-url: ${AI_EMBEDDING_OPENAI_BASE_URL:${AI_OPENAI_BASE_URL:https://api.openai.com}}
+        embeddings-path: ${AI_EMBEDDING_OPENAI_EMBEDDINGS_PATH:/v1/embeddings}
+        options:
+          model: ${AI_EMBEDDING_OPENAI_MODEL:text-embedding-3-small}
+          dimensions: ${AI_EMBEDDING_OPENAI_DIMENSION:1536}
+
+smart-community:
+  ai:
+    cors:
+      # 前端默认通过 gateway-service 访问 /api/ai/**，由网关统一返回 CORS 头。
+      # 只有需要直接访问 ai-service:8090 调试时，才设置 AI_SERVICE_CORS_ENABLED=true。
+      enabled: ${AI_SERVICE_CORS_ENABLED:false}
+    workorder:
+      provider-version: spring-ai-v1
+    customer-service:
+      provider-version: rag-v1
+      knowledge-store: ${AI_CUSTOMER_KNOWLEDGE_STORE:static}
+      jdbc:
+        url: ${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}
+        username: ${AI_CUSTOMER_KNOWLEDGE_JDBC_USERNAME:${MYSQL_USERNAME:root}}
+        password: ${AI_CUSTOMER_KNOWLEDGE_JDBC_PASSWORD:${MYSQL_PASSWORD:root}}
+    embedding:
+      # hash 是本地演示用 Embedding Provider，用于先跑通 chunk -> vector -> MySQL 的工程链路。
+      # 后续可替换为 openai/qwen/bge 等真实 embedding provider。
+      provider: ${AI_EMBEDDING_PROVIDER:hash}
+      hash:
+        dimension: ${AI_HASH_EMBEDDING_DIMENSION:128}
+      openai:
+        model: ${AI_EMBEDDING_OPENAI_MODEL:text-embedding-3-small}
+        dimension: ${AI_EMBEDDING_OPENAI_DIMENSION:1536}
+    operations:
+      provider-version: operations-ai-v1
+      jdbc:
+        url: "${AI_OPERATIONS_JDBC_URL:${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}}"
+        username: ${AI_OPERATIONS_JDBC_USERNAME:${AI_CUSTOMER_KNOWLEDGE_JDBC_USERNAME:${MYSQL_USERNAME:root}}}
+        password: ${AI_OPERATIONS_JDBC_PASSWORD:${AI_CUSTOMER_KNOWLEDGE_JDBC_PASSWORD:${MYSQL_PASSWORD:root}}}
+    observability:
+      enabled: ${AI_OBSERVABILITY_ENABLED:true}
+      jdbc:
+        url: "${AI_OBSERVABILITY_JDBC_URL:${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}}"
+        username: ${AI_OBSERVABILITY_JDBC_USERNAME:${AI_CUSTOMER_KNOWLEDGE_JDBC_USERNAME:${MYSQL_USERNAME:root}}}
+        password: ${AI_OBSERVABILITY_JDBC_PASSWORD:${AI_CUSTOMER_KNOWLEDGE_JDBC_PASSWORD:${MYSQL_PASSWORD:root}}}
+    knowledge:
+      sync:
+        notices:
+          enabled: ${AI_NOTICE_KNOWLEDGE_SYNC_ENABLED:false}
+          initial-delay-ms: ${AI_NOTICE_KNOWLEDGE_SYNC_INITIAL_DELAY_MS:30000}
+          fixed-delay-ms: ${AI_NOTICE_KNOWLEDGE_SYNC_FIXED_DELAY_MS:300000}

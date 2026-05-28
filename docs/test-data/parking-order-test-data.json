@@ -1,0 +1,86 @@
+{
+  "说明": "停车订单接口测试数据",
+  "接口1_创建停车订单": {
+    "示例1_临时停车订单": {
+      "userId": 1,
+      "spaceId": null,
+      "orderType": "TEMP",
+      "amount": 15.50,
+      "startTime": "2025-01-15T09:00:00",
+      "endTime": "2025-01-15T18:00:00",
+      "remark": "京A12345"
+    },
+    "示例2_临时停车订单_简化版": {
+      "userId": 1,
+      "orderType": "TEMP",
+      "amount": 10.00,
+      "startTime": "2025-01-15T14:30:00",
+      "endTime": "2025-01-15T16:30:00",
+      "remark": "临时停车2小时"
+    },
+    "示例3_固定车位订单": {
+      "userId": 2,
+      "spaceId": 1,
+      "orderType": "FIXED",
+      "amount": 200.00,
+      "startTime": "2025-01-01T00:00:00",
+      "endTime": "2025-01-31T23:59:59",
+      "remark": "1月固定车位租金"
+    },
+    "示例4_固定车位订单_月租": {
+      "userId": 3,
+      "spaceId": 5,
+      "orderType": "FIXED",
+      "amount": 300.00,
+      "startTime": "2025-02-01T00:00:00",
+      "endTime": "2025-02-28T23:59:59",
+      "remark": "2月固定车位月租"
+    },
+    "示例5_临时停车_单次": {
+      "userId": 1,
+      "orderType": "TEMP",
+      "amount": 5.00,
+      "startTime": "2025-01-15T10:00:00",
+      "endTime": "2025-01-15T12:00:00",
+      "remark": "京B88888"
+    }
+  },
+  "接口2_支付停车订单": {
+    "示例1_微信支付": {
+      "userId": 1,
+      "payChannel": "WECHAT",
+      "payRemark": "微信支付-交易号：wx2025011514300001"
+    },
+    "示例2_支付宝支付": {
+      "userId": 2,
+      "payChannel": "ALIPAY",
+      "payRemark": "支付宝支付-交易号：2025011514300001"
+    },
+    "示例3_现金支付": {
+      "userId": 3,
+      "payChannel": "CASH",
+      "payRemark": "现金支付-已收讫"
+    },
+    "示例4_微信支付_简化": {
+      "userId": 1,
+      "payChannel": "WECHAT",
+      "payRemark": ""
+    }
+  },
+  "测试步骤说明": {
+    "步骤1": "先调用创建订单接口（POST /api/parking/order），获取返回的订单ID",
+    "步骤2": "使用返回的订单ID调用支付接口（PUT /api/parking/order/{id}/pay）",
+    "步骤3": "使用创建订单时的userId查询订单列表（GET /api/parking/order/my?userId=1）"
+  },
+  "注意事项": {
+    "1": "临时停车订单（TEMP）不需要spaceId，固定车位订单（FIXED）必须提供spaceId",
+    "2": "userId需要是数据库中已存在的用户ID",
+    "3": "如果是固定车位订单，spaceId必须是数据库中已存在的车位ID",
+    "4": "时间格式使用 ISO 8601 格式：yyyy-MM-ddTHH:mm:ss",
+    "5": "金额使用数字格式，支持小数（如：15.50）",
+    "6": "支付渠道只能是：WECHAT、ALIPAY、CASH"
+  }
+}
+
+
+

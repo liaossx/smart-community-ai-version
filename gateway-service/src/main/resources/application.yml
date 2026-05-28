@@ -1,0 +1,110 @@
+spring:
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8080}
+        port: ${SENTINEL_TRANSPORT_PORT:8719}
+      filter:
+        enabled: true
+      scg:
+        fallback:
+          mode: response
+          response-status: 429
+          response-body: "{\"code\":429,\"msg\":\"请求过于频繁，请稍后再试\",\"data\":null}"
+      datasource:
+        gw-flow:
+          nacos:
+            server-addr: ${spring.cloud.nacos.discovery.server-addr}
+            data-id: sentinel-gw-flow-rules
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: gw-flow
+        gw-api-group:
+          nacos:
+            server-addr: ${spring.cloud.nacos.discovery.server-addr}
+            data-id: sentinel-gw-api-group-rules
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: gw-api-group
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      # gateway 和下游服务都配置 CORS 时，响应头可能重复。
+      # 浏览器只允许 Access-Control-Allow-Origin 出现一个值，这里统一做去重。
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin, RETAIN_UNIQUE
+      routes:
+        # 用户服务路由
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**, /api/admin/user/**
+          filters:
+            - RewritePath=/api/user/(?<segment>v3/api-docs), /$\{segment}
+
+        # 房屋服务路由
+        - id: house-service
+          uri: lb://house-service
+          predicates:
+            - Path=/api/house/**, /api/admin/house/**
+          filters:
+            - RewritePath=/api/house/(?<segment>v3/api-docs), /$\{segment}
+
+        # 停车服务路由
+        - id: parking-service
+          uri: lb://parking-service
+          predicates:
+            - Path=/api/parking/**, /api/vehicle/**
+          filters:
+            - RewritePath=/api/parking/(?<segment>v3/api-docs), /$\{segment}
+
+        # 社区互动服务 (活动/话题/团购)
+        - id: community-service
+          uri: lb://community-service
+          predicates:
+            - Path=/api/activity/**,/api/topic/**,/api/group/**
+          filters:
+            - RewritePath=/api/activity/(?<segment>v3/api-docs), /$\{segment}
+
+        # 物业服务路由 (费用/报修/投诉/公告/访客/快递)
+        - id: property-service
+          uri: lb://property-service
+          predicates:
+            - Path=/api/fee/**,/api/complaint/**,/api/notice/**,/api/visitor/**,/api/express/**
+          filters:
+            - RewritePath=/api/fee/(?<segment>v3/api-docs), /$\{segment}
+
+        # 工单服务路由 (报修/工单)
+        - id: workorder-service
+          uri: lb://workorder-service
+          predicates:
+            - Path=/api/repair/**, /api/workorder/**
+          filters:
+            - RewritePath=/api/repair/(?<segment>v3/api-docs), /${segment}
+
+        # AI 服务路由 (工单AI/RAG客服/知识库/运营周报)
+        # ai-service 当前是独立 Java 17 服务，暂未接入 Nacos，所以这里先使用直连地址。
+        # 如果以后 ai-service 注册到 Nacos，可改成 uri: lb://ai-service。
+        - id: ai-service
+          uri: ${AI_SERVICE_GATEWAY_URI:http://localhost:8090}
+          predicates:
+            - Path=/api/ai/**
+
+        # 系统管理服务 (日志/统计/配置)
+        - id: system-service
+          uri: lb://system-service
+          predicates:
+            - Path=/api/monitor/**,/api/admin/stats/**,/api/system/**
+          filters:
+            - RewritePath=/api/monitor/(?<segment>v3/api-docs), /$\{segment}
+
+knife4j:
+  gateway:
+    enabled: true
+    strategy: discover
+    discover:
+      enabled: true
+      version: openapi3
+      excluded-services:
+        - gateway-service

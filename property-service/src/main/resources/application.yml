@@ -1,0 +1,42 @@
+mybatis-plus:
+  mapper-locations: classpath*:com/lsx/property/*/mapper/*.xml
+  type-aliases-package: com.lsx.property.*.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    root: info
+    com.lsx.property.mapper: debug
+
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+  openapi:
+    title: 智慧物业服务 API
+    description: 物业费、报修、投诉、公告、访客管理
+    version: 1.0
+    contact:
+      name: lsx
+      email: 2428513271@qq.com
+
+jwt:
+  secret: "mySecretKeyForJWTGenerationInSmartCommunitySystem2024"
+  expiration: 86400000
+
+
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:192.168.10.101}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:1234}
+    hikari:
+      maximum-pool-size: 50 # 必须加上这个，解决连接池干涸
+  redis:
+    host: ${REDIS_HOST:192.168.10.101} # 必须加上这个，解决 localhost 报错
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:1234} # 如果没密码就删掉或留空

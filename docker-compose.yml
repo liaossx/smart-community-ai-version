@@ -1,0 +1,181 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: docker.m.daocloud.io/library/nginx:1.25-alpine
+    container_name: smart-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - /opt/smart-community/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /opt/smart-community/frontend/web:/usr/share/nginx/html:ro
+    depends_on:
+      - gateway-service
+
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.0
+    container_name: smart-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: smart_community
+      TZ: Asia/Shanghai
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./sql/init_all.sql:/docker-entrypoint-initdb.d/01_init_all.sql
+      - ./sql/nacos_setup.sql:/docker-entrypoint-initdb.d/02_nacos_setup.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max_connections=500
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:6.2
+    container_name: smart-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    environment:
+      TZ: Asia/Shanghai
+    command: redis-server --requirepass 1234 --appendonly yes
+
+  nacos:
+    image: docker.m.daocloud.io/nacos/nacos-server:v2.2.0
+    container_name: smart-nacos
+    restart: always
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - ./nacos/data:/home/nacos/data
+      - ./nacos/logs:/home/nacos/logs
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - db.num=1
+      - db.url.0=jdbc:mysql://mysql:3306/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      - db.user.0=root
+      - db.password.0=1234
+    depends_on:
+      - mysql
+
+  rabbitmq:
+    image: docker.m.daocloud.io/library/rabbitmq:3.9-management
+    container_name: smart-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+    #  sentinel:
+    #    image: docker.m.daocloud.io/library/openjdk:17
+    #    container_name: smart-sentinel
+    #    restart: always
+    #    ports:
+    #      - "8858:8858"
+    #    command: >
+    #      sh -c "wget -O sentinel.jar https://github.com/alibaba/Sentinel/releases/download/1.8.6/sentinel-dashboard-1.8.6.jar &&
+    #             java -jar sentinel.jar --server.port=8858"
+
+  user-service:
+      build: ./user-service
+      container_name: smart-user-service
+      restart: always
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - mysql
+        - redis
+        - nacos
+
+  house-service:
+      build: ./house-service
+      container_name: smart-house-service
+      restart: always
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - mysql
+        - redis
+        - nacos
+
+  property-service:
+      build: ./property-service
+      container_name: smart-property-service
+      restart: always
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - mysql
+        - redis
+        - nacos
+
+  parking-service:
+      build: ./parking-service
+      container_name: smart-parking-service
+      restart: always
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - mysql
+        - redis
+        - nacos
+
+  system-service:
+      build: ./system-service
+      container_name: smart-system-service
+      restart: always
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - nacos
+
+  community-service:
+      build: ./community-service
+      container_name: smart-community-service
+      restart: always
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - nacos
+
+  workorder-service:
+      build: ./workorder-service
+      container_name: smart-workorder-service
+      restart: always
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - nacos
+
+  gateway-service:
+      build: ./gateway-service
+      container_name: smart-gateway-service
+      restart: always
+      ports:
+        - "8080:80"
+      environment:
+        SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+        SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+      depends_on:
+        - nacos
+

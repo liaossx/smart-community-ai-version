@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.0
+    container_name: smart-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: smart_community
+      TZ: Asia/Shanghai
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./sql/init_all.sql:/docker-entrypoint-initdb.d/01_init_all.sql
+      - ./sql/nacos_setup.sql:/docker-entrypoint-initdb.d/02_nacos_setup.sql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max_connections=500
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:6.2
+    container_name: smart-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass 1234 --appendonly yes
+
+  nacos:
+    image: docker.m.daocloud.io/nacos/nacos-server:v2.2.0
+    container_name: smart-nacos
+    restart: always
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - ./nacos/data:/home/nacos/data
+      - ./nacos/logs:/home/nacos/logs
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+
+      # ✅ 数据库核心配置
+      - MYSQL_SERVICE_HOST=smart-mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=1234
+
+      # ❗ 关键补充（你缺的）
+      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+
+    depends_on:
+      - mysql
+
+  rabbitmq:
+    image: docker.m.daocloud.io/library/rabbitmq:3.9-management
+    container_name: smart-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest

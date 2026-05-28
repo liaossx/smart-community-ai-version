@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:192.168.10.101}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:1234}
+    hikari:
+      maximum-pool-size: 50 # 必须加上这个，解决连接池干涸
+  redis:
+    host: ${REDIS_HOST:192.168.10.101} # 必须加上这个，解决 localhost 报错
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:1234} # 如果没密码就删掉或留空
+  rabbitmq:
+    host: ${RABBITMQ_HOST:192.168.10.101}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+mybatis-plus:
+  mapper-locations: classpath*:com/lsx/workorder/*/mapper/*.xml
+  type-aliases-package: com.lsx.workorder.*.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    root: info
+    com.lsx.workorder.mapper: debug
+
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+  openapi:
+    title: 工单服务 API
+    description: 报修工单提交、处理、统计
+    version: 1.0
+
+jwt:
+  secret: "mySecretKeyForJWTGenerationInSmartCommunitySystem2024"
+  expiration: 86400000
+
+smart-community:
+  ai:
+    workorder:
+      provider: ${AI_WORKORDER_PROVIDER:rule}
+      ai-service-url: ${AI_SERVICE_URL:http://localhost:8090}
