@@ -2,14 +2,14 @@ package com.lsx.ai.operations.dto;
 
 public class OperationsReportFromDbResponse {
     private String source;
-    private OperationsReportRequest sourceData;
+    private OperationsMetricsSnapshot sourceData;
     private OperationsReportResponse report;
 
     public OperationsReportFromDbResponse() {
     }
 
     public OperationsReportFromDbResponse(String source,
-                                          OperationsReportRequest sourceData,
+                                          OperationsMetricsSnapshot sourceData,
                                           OperationsReportResponse report) {
         this.source = source;
         this.sourceData = sourceData;
@@ -24,11 +24,11 @@ public class OperationsReportFromDbResponse {
         this.source = source;
     }
 
-    public OperationsReportRequest getSourceData() {
+    public OperationsMetricsSnapshot getSourceData() {
         return sourceData;
     }
 
-    public void setSourceData(OperationsReportRequest sourceData) {
+    public void setSourceData(OperationsMetricsSnapshot sourceData) {
         this.sourceData = sourceData;
     }
 
@@ -40,3 +40,4 @@ public class OperationsReportFromDbResponse {
         this.report = report;
     }
 }
+

@@ -1,6 +1,6 @@
 package com.lsx.ai.operations.service;
 
-import com.lsx.ai.operations.dto.OperationsReportRequest;
+import com.lsx.ai.operations.dto.OperationsMetricsSnapshot;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,7 @@ public class OperationsMetricsAggregationService {
         this.password = password;
     }
 
-    public OperationsReportRequest aggregateWeeklyReportData(Long communityId,
+    public OperationsMetricsSnapshot aggregateWeeklyReportData(Long communityId,
                                                              LocalDate startDate,
                                                              LocalDate endDate) {
         validateDateRange(startDate, endDate);
@@ -56,7 +56,7 @@ public class OperationsMetricsAggregationService {
 
         try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
             // sourceData 是“给大模型的事实材料”。模型只能总结这些数据，不直接查库。
-            OperationsReportRequest request = new OperationsReportRequest();
+            OperationsMetricsSnapshot request = new OperationsMetricsSnapshot();
             request.setCommunityId(communityId);
             request.setCommunityName(resolveCommunityName(connection, communityId));
             request.setStartDate(startDate.toString());
@@ -274,7 +274,7 @@ public class OperationsMetricsAggregationService {
                                                Long communityId,
                                                Timestamp startTime,
                                                Timestamp endExclusive,
-                                               OperationsReportRequest request) throws SQLException {
+                                               OperationsMetricsSnapshot request) throws SQLException {
         // recentRiskEvents 是喂给模型的“重点风险事实”，让模型能生成更像运营周报的风险提醒。
         List<String> events = new ArrayList<>();
         events.addAll(queryRiskRepairEvents(connection, communityId, startTime, endExclusive));
@@ -453,3 +453,4 @@ public class OperationsMetricsAggregationService {
         void bind(PreparedStatement statement) throws SQLException;
     }
 }
+

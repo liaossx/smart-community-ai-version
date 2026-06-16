@@ -213,17 +213,37 @@ VALUES
 ('[AI运营测试][HIGH] 电梯维保进度说明', '针对多栋电梯运行异常，物业已联系维保单位逐栋排查。', 'COMMUNITY', @ops_community_id, @ops_community_name, 'PUBLISHED', 0, '2026-06-07 18:00:00', NULL, @ops_user_id, '2026-06-07 17:30:00', '2026-06-07 18:00:00', 0);
 
 -- 当前欠费属于“当前存量指标”，不是按周过滤。三个日期区间都会看到这些未缴费账单。
+-- 这里故意制造 55 笔未缴/逾期账单，让 AI 洞察稳定识别“欠费压力”风险，而不是只输出平淡总结。
 INSERT INTO sys_fee
 (house_id, community_id, building_no, fee_cycle, fee_amount, fee_type, status, remind_count, due_date, create_time, update_time, remark)
-VALUES
-(@ops_house_id, @ops_community_id, 'AI1栋', '2026-05', 260.00, '物业费', 'UNPAID', 1, '2026-05-31 23:59:59', '2026-05-01 09:00:00', '2026-05-20 09:00:00', 'AI_OPS_TEST'),
-(@ops_house_id, @ops_community_id, 'AI1栋', '2026-06', 260.00, '物业费', 'UNPAID', 0, '2026-06-30 23:59:59', '2026-06-01 09:00:00', '2026-06-01 09:00:00', 'AI_OPS_TEST'),
-(@ops_house_id, @ops_community_id, 'AI2栋', '2026-05', 310.00, '物业费', 'UNPAID', 2, '2026-05-31 23:59:59', '2026-05-01 09:00:00', '2026-05-25 09:00:00', 'AI_OPS_TEST'),
-(@ops_house_id, @ops_community_id, 'AI3栋', '2026-05', 180.00, '物业费', 'PAYING', 1, '2026-05-31 23:59:59', '2026-05-01 09:00:00', '2026-05-26 09:00:00', 'AI_OPS_TEST'),
-(@ops_house_id, @ops_community_id, 'AI4栋', '2026-05', 420.00, '物业费', 'OVERDUE', 3, '2026-05-31 23:59:59', '2026-05-01 09:00:00', '2026-06-03 09:00:00', 'AI_OPS_TEST'),
-(@ops_house_id, @ops_community_id, 'AI5栋', '2026-05', 220.00, '物业费', 'UNPAID', 1, '2026-05-31 23:59:59', '2026-05-01 09:00:00', '2026-06-04 09:00:00', 'AI_OPS_TEST'),
-(@ops_house_id, @ops_community_id, 'AI6栋', '2026-06', 260.00, '物业费', 'UNPAID', 0, '2026-06-30 23:59:59', '2026-06-01 09:00:00', '2026-06-05 09:00:00', 'AI_OPS_TEST'),
-(@ops_house_id, @ops_community_id, 'AI7栋', '2026-06', 280.00, '物业费', 'PAID', 0, '2026-06-30 23:59:59', '2026-06-01 09:00:00', '2026-06-06 09:00:00', 'AI_OPS_TEST');
+SELECT
+    @ops_house_id,
+    @ops_community_id,
+    CONCAT('AI欠费', fee_seed.n, '栋'),
+    CASE WHEN fee_seed.n <= 30 THEN '2026-05' ELSE '2026-06' END,
+    180.00 + fee_seed.n * 6.50,
+    '物业费',
+    CASE
+        WHEN fee_seed.n % 5 = 0 THEN 'OVERDUE'
+        WHEN fee_seed.n % 7 = 0 THEN 'PAYING'
+        ELSE 'UNPAID'
+    END,
+    LEAST(4, fee_seed.n % 5),
+    CASE WHEN fee_seed.n <= 30 THEN '2026-05-31 23:59:59' ELSE '2026-06-30 23:59:59' END,
+    CASE WHEN fee_seed.n <= 30 THEN '2026-05-01 09:00:00' ELSE '2026-06-01 09:00:00' END,
+    CASE WHEN fee_seed.n <= 30 THEN '2026-06-03 09:00:00' ELSE '2026-06-07 09:00:00' END,
+    'AI_OPS_TEST'
+FROM (
+    SELECT ones.n + tens.n * 10 + 1 AS n
+    FROM (
+        SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+        UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
+    ) ones
+    CROSS JOIN (
+        SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+    ) tens
+) fee_seed
+WHERE fee_seed.n <= 55;
 
 -- 给所有 AI 测试报修生成对应工单，用于 urgentRepairCount 和风险判断。
 INSERT INTO biz_work_order

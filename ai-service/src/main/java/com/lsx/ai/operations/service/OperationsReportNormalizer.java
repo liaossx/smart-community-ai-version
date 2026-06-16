@@ -1,6 +1,6 @@
 package com.lsx.ai.operations.service;
 
-import com.lsx.ai.operations.dto.OperationsReportRequest;
+import com.lsx.ai.operations.dto.OperationsMetricsSnapshot;
 import com.lsx.ai.operations.dto.OperationsReportResponse;
 import com.lsx.ai.operations.dto.OperationsRiskAlert;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ public class OperationsReportNormalizer {
      * 补标题、补居民诉求摘要、规范风险等级、判断是否需要人工复核。
      */
     public OperationsReportResponse normalize(OperationsReportResponse response,
-                                              OperationsReportRequest request,
+                                              OperationsMetricsSnapshot request,
                                               String provider,
                                               String providerVersion,
                                               String model) {
@@ -40,9 +40,8 @@ public class OperationsReportNormalizer {
         result.setRiskAlerts(normalizeRisks(result.getRiskAlerts()));
         if (result.getManualReviewNeeded() == null) {
             // 是否人工复核不能完全交给模型；高风险、紧急维修、投诉积压都应触发人工复核。
-            result.setManualReviewNeeded(hasHighRisk(result.getRiskAlerts())
-                    || defaultInt(request.getUrgentRepairCount()) > 0
-                    || defaultInt(request.getComplaintPending()) >= 5);
+            result.setManualReviewNeeded(OperationsRiskAssessment.hasHighRiskAlerts(result.getRiskAlerts())
+                    || OperationsRiskAssessment.needsManualReview(request, "LOW"));
         }
         result.setConfidence(calibrateConfidence(result.getConfidence(), request, provider));
         result.setProvider(provider);
@@ -51,14 +50,14 @@ public class OperationsReportNormalizer {
         return result;
     }
 
-    private String buildDefaultTitle(OperationsReportRequest request) {
+    private String buildDefaultTitle(OperationsMetricsSnapshot request) {
         String communityName = StringUtils.hasText(request.getCommunityName())
                 ? request.getCommunityName()
                 : "社区";
         return communityName + "运营周报（" + request.getStartDate() + "至" + request.getEndDate() + "）";
     }
 
-    private String buildAppealSummary(OperationsReportRequest request) {
+    private String buildAppealSummary(OperationsMetricsSnapshot request) {
         List<String> appeals = request.getResidentAppeals();
         if (appeals == null || appeals.isEmpty()) {
             return "本期未提供居民诉求明细。";
@@ -92,51 +91,21 @@ public class OperationsReportNormalizer {
         return "LOW";
     }
 
-    private boolean hasHighRisk(List<OperationsRiskAlert> risks) {
-        if (risks == null) {
-            return false;
-        }
-        return risks.stream()
-                .map(OperationsRiskAlert::getRiskLevel)
-                .anyMatch(level -> "HIGH".equals(level) || "CRITICAL".equals(level));
-    }
-
     private int defaultInt(Integer value) {
         return value == null ? 0 : value;
     }
 
-    private Integer calibrateConfidence(Integer confidence, OperationsReportRequest request, String provider) {
+    private Integer calibrateConfidence(Integer confidence, OperationsMetricsSnapshot request, String provider) {
         // 模型有时会乱给 confidence。这里按 SQL 指标完整度和风险强度拉回合理区间。
         int value = clampConfidence(confidence);
         if (!"SPRING_AI_OPERATIONS".equals(provider)) {
             return value;
         }
-        int minimum = hasOperationalSignals(request) ? 85 : 80;
-        if (hasHighRiskSignals(request)) {
+        int minimum = OperationsRiskAssessment.hasOperationalSignals(request) ? 85 : 80;
+        if (OperationsRiskAssessment.hasHighRiskSignals(request)) {
             minimum = 90;
         }
         return Math.max(value, minimum);
-    }
-
-    private boolean hasOperationalSignals(OperationsReportRequest request) {
-        return defaultInt(request.getRepairTotal()) > 0
-                || defaultInt(request.getComplaintTotal()) > 0
-                || defaultInt(request.getVisitorTotal()) > 0
-                || defaultInt(request.getFeeUnpaidCount()) > 0
-                || defaultInt(request.getNoticePublishedCount()) > 0
-                || !isEmpty(request.getTopRepairCategories())
-                || !isEmpty(request.getResidentAppeals())
-                || !isEmpty(request.getRecentRiskEvents());
-    }
-
-    private boolean hasHighRiskSignals(OperationsReportRequest request) {
-        return defaultInt(request.getUrgentRepairCount()) > 0
-                || defaultInt(request.getComplaintPending()) >= 5
-                || !isEmpty(request.getRecentRiskEvents());
-    }
-
-    private boolean isEmpty(List<?> values) {
-        return values == null || values.isEmpty();
     }
 
     private Integer clampConfidence(Integer confidence) {
@@ -152,3 +121,4 @@ public class OperationsReportNormalizer {
         return confidence;
     }
 }
+

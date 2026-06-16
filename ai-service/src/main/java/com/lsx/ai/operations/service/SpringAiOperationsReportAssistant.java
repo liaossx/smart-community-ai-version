@@ -1,6 +1,6 @@
 package com.lsx.ai.operations.service;
 
-import com.lsx.ai.operations.dto.OperationsReportRequest;
+import com.lsx.ai.operations.dto.OperationsMetricsSnapshot;
 import com.lsx.ai.operations.dto.OperationsReportResponse;
 import com.lsx.ai.operations.dto.OperationsRiskAlert;
 import com.lsx.ai.observability.model.AiCallLogEntry;
@@ -54,7 +54,7 @@ public class SpringAiOperationsReportAssistant implements OperationsReportAssist
     }
 
     @Override
-    public OperationsReportResponse generateWeeklyReport(OperationsReportRequest request) {
+    public OperationsReportResponse generateWeeklyReport(OperationsMetricsSnapshot request) {
         AiCallLogEntry callLog = AiCallLogEntry.start("OPERATIONS_REPORT")
                 .bizKey("communityId=" + request.getCommunityId())
                 .requestSummary(buildOperationData(request));
@@ -93,7 +93,7 @@ public class SpringAiOperationsReportAssistant implements OperationsReportAssist
         }
     }
 
-    private String buildOperationData(OperationsReportRequest request) {
+    private String buildOperationData(OperationsMetricsSnapshot request) {
         // 这里就是“运营数据上下文封装”，业务指标会原样进入 Prompt。
         return String.join("\n",
                 "communityId: " + request.getCommunityId(),
@@ -114,7 +114,7 @@ public class SpringAiOperationsReportAssistant implements OperationsReportAssist
         );
     }
 
-    private OperationsReportResponse ruleFallback(OperationsReportRequest request) {
+    private OperationsReportResponse ruleFallback(OperationsMetricsSnapshot request) {
         // 保底版本只做确定性总结，不做复杂推理。
         OperationsReportResponse response = new OperationsReportResponse();
         response.setReportTitle(buildTitle(request));
@@ -137,7 +137,7 @@ public class SpringAiOperationsReportAssistant implements OperationsReportAssist
         return response;
     }
 
-    private List<OperationsRiskAlert> buildRuleRisks(OperationsReportRequest request) {
+    private List<OperationsRiskAlert> buildRuleRisks(OperationsMetricsSnapshot request) {
         if (defaultInt(request.getUrgentRepairCount()) <= 0
                 && defaultInt(request.getComplaintPending()) < 5
                 && (request.getRecentRiskEvents() == null || request.getRecentRiskEvents().isEmpty())) {
@@ -151,12 +151,12 @@ public class SpringAiOperationsReportAssistant implements OperationsReportAssist
         return List.of(risk);
     }
 
-    private String buildTitle(OperationsReportRequest request) {
+    private String buildTitle(OperationsMetricsSnapshot request) {
         String communityName = request.getCommunityName() == null ? "社区" : request.getCommunityName();
         return communityName + "运营周报（" + request.getStartDate() + "至" + request.getEndDate() + "）";
     }
 
-    private String buildAppealSummary(OperationsReportRequest request) {
+    private String buildAppealSummary(OperationsMetricsSnapshot request) {
         if (request.getResidentAppeals() == null || request.getResidentAppeals().isEmpty()) {
             return "本期未提供居民诉求明细。";
         }
@@ -167,3 +167,4 @@ public class SpringAiOperationsReportAssistant implements OperationsReportAssist
         return value == null ? 0 : value;
     }
 }
+

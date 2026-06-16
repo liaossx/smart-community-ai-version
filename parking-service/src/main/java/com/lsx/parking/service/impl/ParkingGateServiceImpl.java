@@ -1,4 +1,4 @@
-package com.lsx.parking.service.impl;
+﻿package com.lsx.parking.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lsx.core.common.Util.RedisLockUtil;
@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
@@ -23,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -35,6 +37,9 @@ public class ParkingGateServiceImpl implements ParkingGateService {
     private final ParkingSpaceLeaseMapper leaseMapper;
     private final VehicleMapper vehicleMapper;
     private final RedisLockUtil redisLockUtil;
+
+    // ======== 编程式事务：替代 @Transactional，让我们能精确控制事务开启时机 ========
+    private final TransactionTemplate transactionTemplate;
 
     @Autowired
     private DataSource dataSource;
@@ -88,20 +93,57 @@ public class ParkingGateServiceImpl implements ParkingGateService {
         gateLogMapper.insert(gateLog);
     }
 
+    // ======== exitGate：事务时机改造核心 —— 先拿锁，再开事务 ========
     @Override
-    @Transactional
     public ParkingGateExitResult exitGate(ParkingGateExitDTO dto) {
         String plateNo = dto.getPlateNo();
-        LocalDateTime exitTime = LocalDateTime.now();
 
-        // ==================【1️⃣：基础参数校验】=================
         if (!StringUtils.hasText(plateNo)) {
             throw new RuntimeException("车牌号不能为空");
         }
 
+        String lockKey = "lock:parking:exit:" + plateNo;
+        String lockValue = UUID.randomUUID().toString();
+
+        // ① 先拿锁 —— 此时没有事务，不占用数据库连接
+        boolean locked = false;
+        try {
+            locked = redisLockUtil.tryLockWithRetry(lockKey, lockValue, 10, 5, 200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("【出闸中断】车牌 {} 获取锁被中断", plateNo, e);
+            throw new RuntimeException("系统繁忙，请稍后重试");
+        }
+
+        if (!locked) {
+            log.warn("【出闸冲突】车牌 {} 正在处理中，拦截重复请求", plateNo);
+            throw new RuntimeException("车辆正在出闸处理中，请勿重复操作");
+        }
+
+        try {
+            // ② 锁内 → 编程式开启事务（事务在这里才启动）
+            return transactionTemplate.execute(status -> doExitBusiness(dto));
+        } finally {
+            // ③ execute() 返回时事务已提交，释放锁 —— 没有间隙
+            try {
+                redisLockUtil.unlock(lockKey, lockValue);
+            } catch (Exception e) {
+                log.error("【锁释放异常】车牌 {} 释放锁失败", plateNo, e);
+            }
+        }
+    }
+
+    /**
+     * 出闸纯业务逻辑 —— 由 TransactionTemplate 的事务包裹执行。
+     * 该方法不关心锁的存在，只负责 SQL 业务。
+     */
+    private ParkingGateExitResult doExitBusiness(ParkingGateExitDTO dto) {
+        String plateNo = dto.getPlateNo();
+        LocalDateTime exitTime = LocalDateTime.now();
+
         log.info("【出闸业务处理】车牌: {}", plateNo);
 
-        // ==================【3️⃣：查询最近一次入闸记录】=================
+        // ===== 1. 查询最近一次入闸记录 =====
         ParkingGateLog enterLog = gateLogMapper.selectOne(
                 Wrappers.<ParkingGateLog>lambdaQuery()
                         .eq(ParkingGateLog::getPlateNo, plateNo)
@@ -117,7 +159,7 @@ public class ParkingGateServiceImpl implements ParkingGateService {
 
         LocalDateTime enterTime = enterLog.getCreateTime();
 
-        // ==================【4️⃣：固定车位校验】=================
+        // ===== 2. 固定车位校验 =====
         ParkingSpaceLease lease = null;
         if (enterLog.getUserId() != null) {
             lease = leaseMapper.selectOne(
@@ -128,10 +170,9 @@ public class ParkingGateServiceImpl implements ParkingGateService {
             );
         }
 
-        boolean isFixedOwner = lease != null &&
-                (lease.getEndTime() == null || lease.getEndTime().isAfter(exitTime));
+        boolean isFixedOwner = lease != null
+                && (lease.getEndTime() == null || lease.getEndTime().isAfter(exitTime));
 
-        // ==================【5️⃣：固定车位 -> 直接放行】=================
         if (isFixedOwner) {
             log.info("【固定车位放行】车牌 {} 为固定车位业主，直接放行", plateNo);
 
@@ -153,7 +194,7 @@ public class ParkingGateServiceImpl implements ParkingGateService {
             return result;
         }
 
-        // ==================【6️⃣：数据库层防重复订单（第二道防线）】=================
+        // ===== 3. 数据库层防重复订单（第二道防线） =====
         ParkingOrder existOrder = parkingOrderMapper.selectOne(
                 Wrappers.<ParkingOrder>lambdaQuery()
                         .eq(ParkingOrder::getPlateNo, plateNo)
@@ -163,8 +204,7 @@ public class ParkingGateServiceImpl implements ParkingGateService {
         );
 
         if (existOrder != null) {
-            log.warn("【出闸拦截】车牌 {} 存在未完成订单 orderNo={}",
-                    plateNo, existOrder.getOrderNo());
+            log.warn("【出闸拦截】车牌 {} 存在未完成订单 orderNo={}", plateNo, existOrder.getOrderNo());
 
             ParkingGateExitResult result = new ParkingGateExitResult();
             result.setAllowPass(false);
@@ -175,27 +215,20 @@ public class ParkingGateServiceImpl implements ParkingGateService {
             return result;
         }
 
-        // ==================【7️⃣：临时车计费逻辑】=================
+        // ===== 4. 临时车计费 =====
         long minutes = Duration.between(enterTime, exitTime).toMinutes();
         long hours = minutes <= 0 ? 1 : (minutes + 59) / 60;
         BigDecimal amount = BigDecimal.valueOf(hours * 10);
 
-        log.info("【计费信息】车牌 {} 停车时长 {} 分钟，计费 {} 元",
-                plateNo, minutes, amount);
+        log.info("【计费信息】车牌 {} 停车时长 {} 分钟，计费 {} 元", plateNo, minutes, amount);
 
-        // ==================【8️⃣：生成唯一停车订单】=================
+        // ===== 5. 生成停车订单 =====
         String orderNo = generateOrderNo();
         ParkingOrder order = new ParkingOrder();
         order.setOrderNo(orderNo);
         order.setPlateNo(plateNo);
         order.setUserId(enterLog.getUserId() == null ? 0L : enterLog.getUserId());
-
-        if (enterLog.getSpaceId() != null) {
-            order.setSpaceId(enterLog.getSpaceId());
-        } else {
-            order.setSpaceId(0L);
-        }
-
+        order.setSpaceId(enterLog.getSpaceId() != null ? enterLog.getSpaceId() : 0L);
         order.setOrderType("TEMP");
         order.setAmount(amount);
         order.setStatus("UNPAID");
@@ -206,17 +239,14 @@ public class ParkingGateServiceImpl implements ParkingGateService {
 
         parkingOrderMapper.insert(order);
 
-        log.info("【订单生成】车牌 {} 生成停车订单 orderNo={}, amount={}",
-                plateNo, orderNo, amount);
+        log.info("【订单生成】车牌 {} 生成停车订单 orderNo={}, amount={}", plateNo, orderNo, amount);
 
-        // ==================【9️⃣：返回支付信息（临时车不放行）】=================
         ParkingGateExitResult result = new ParkingGateExitResult();
         result.setAllowPass(false);
         result.setNeedPay(true);
         result.setAmount(amount);
         result.setOrderNo(orderNo);
         result.setMessage("请支付停车费后出闸");
-
         return result;
     }
 
@@ -224,23 +254,5 @@ public class ParkingGateServiceImpl implements ParkingGateService {
         String timePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String randomPart = String.format("%04d", new Random().nextInt(10000));
         return "P" + timePart + randomPart;
-    }
-
-    private void recordExitLog(String plateNo,
-                               ParkingGateLog enterLog,
-                               String gateType,
-                               String remark) {
-
-        ParkingGateLog exitLog = new ParkingGateLog();
-        exitLog.setPlateNo(plateNo);
-        exitLog.setUserId(enterLog.getUserId());
-        exitLog.setSpaceId(enterLog.getSpaceId());
-        exitLog.setGateType(gateType);
-        exitLog.setAction("EXIT");
-        exitLog.setResult("SUCCESS");
-        exitLog.setRemark(remark);
-        exitLog.setCreateTime(LocalDateTime.now());
-
-        gateLogMapper.insert(exitLog);
     }
 }

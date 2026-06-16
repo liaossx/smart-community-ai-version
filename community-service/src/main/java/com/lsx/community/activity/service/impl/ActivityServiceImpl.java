@@ -1,4 +1,4 @@
-package com.lsx.community.activity.service.impl;
+﻿package com.lsx.community.activity.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -16,9 +16,12 @@ import com.lsx.core.common.constant.MqConstants;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActivity> implements ActivityService {
@@ -31,6 +34,46 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
+
+    // ======== Lua 脚本：将查重 + 初始化库存 + 扣库存 + 标记用户 合并为一次原子操作 ========
+    private static final String JOIN_LUA_SCRIPT = String.join("\n",
+            "local stockKey = KEYS[1]",
+            "local userSetKey = KEYS[2]",
+            "local userId = ARGV[1]",
+            "local initialStock = tonumber(ARGV[2])",
+            "",
+            "-- 1. 检查是否重复报名",
+            "if redis.call('SISMEMBER', userSetKey, userId) == 1 then",
+            "    return {0, 'DUPLICATE'}",
+            "end",
+            "",
+            "-- 2. 库存 key 不存在则初始化（从 MySQL 算好的 initialStock 传入）",
+            "if redis.call('EXISTS', stockKey) == 0 then",
+            "    redis.call('SET', stockKey, initialStock)",
+            "end",
+            "",
+            "-- 3. 原子扣库存",
+            "local stock = redis.call('DECR', stockKey)",
+            "if stock < 0 then",
+            "    redis.call('INCR', stockKey)",
+            "    return {0, 'SOLD_OUT'}",
+            "end",
+            "",
+            "-- 4. 标记用户已报名",
+            "redis.call('SADD', userSetKey, userId)",
+            "",
+            "return {1, 'OK'}"
+    );
+
+    private DefaultRedisScript<List> joinScript;
+
+    @PostConstruct
+    public void initJoinScript() {
+        DefaultRedisScript<List> script = new DefaultRedisScript<>();
+        script.setScriptText(JOIN_LUA_SCRIPT);
+        script.setResultType(List.class);
+        this.joinScript = script;
+    }
 
     @Override
     public IPage<SysActivity> list(String status, Integer pageNum, Integer pageSize) {
@@ -116,10 +159,6 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
 
     @Override
     public boolean join(Long activityId, Long userId) {
-        // ==========================
-        // 测试第二阶段：优化后（Redis+MQ）
-        // ==========================
-
         SysActivity a = this.getById(activityId);
         if (a == null) throw new RuntimeException("活动不存在");
 
@@ -130,37 +169,39 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
         String stockKey = "activity:stock:" + activityId;
         String userSetKey = "activity:users:" + activityId;
 
-        // 1. 如果Redis中没有库存，则从数据库加载（简单防缓存击穿）
-        if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(stockKey))) {
-            int maxCount = a.getMaxCount() == null ? 999999 : a.getMaxCount();
-            int currentCount = a.getSignupCount() == null ? 0 : a.getSignupCount();
-            int remain = maxCount - currentCount;
-            // 使用 setIfAbsent 避免并发覆盖
-            stringRedisTemplate.opsForValue().setIfAbsent(stockKey, String.valueOf(remain));
+        // 从 DB 算出初始库存，传给 Lua（Lua 不能访问 MySQL）
+        int maxCount = a.getMaxCount() == null ? 999999 : a.getMaxCount();
+        int currentCount = a.getSignupCount() == null ? 0 : a.getSignupCount();
+        int initialStock = maxCount - currentCount;
+
+        // === 一次 EVAL 替代原来的 4~6 次 Redis 命令 ===
+        @SuppressWarnings("unchecked")
+        List<Object> result = stringRedisTemplate.execute(
+                joinScript,
+                java.util.Arrays.asList(stockKey, userSetKey),
+                userId.toString(),
+                String.valueOf(initialStock)
+        );
+
+        long code = (long) result.get(0);
+        if (code == 0) {
+            String reason = (String) result.get(1);
+            if ("DUPLICATE".equals(reason)) {
+                throw new RuntimeException("您已报名该活动");
+            } else {
+                throw new RuntimeException("名额已满");
+            }
         }
 
-        // 2. 利用 Redis Set 防止重复报名
-        Boolean isMember = stringRedisTemplate.opsForSet().isMember(userSetKey, userId.toString());
-        if (Boolean.TRUE.equals(isMember)) {
-            throw new RuntimeException("您已报名该活动");
-        }
-
-        // 3. Redis 预减库存
-        Long stock = stringRedisTemplate.opsForValue().decrement(stockKey);
-        if (stock != null && stock < 0) {
-            // 库存不足，恢复库存
-            stringRedisTemplate.opsForValue().increment(stockKey);
-            throw new RuntimeException("名额已满");
-        }
-
-        // 4. 将用户加入已报名集合
-        stringRedisTemplate.opsForSet().add(userSetKey, userId.toString());
-
-        // 5. 异步发送 MQ 消息，进行数据库写库
+        // Lua 执行成功后，异步发送 MQ 落库
         ActivitySignupMessageDTO msg = new ActivitySignupMessageDTO();
         msg.setActivityId(activityId);
         msg.setUserId(userId);
-        rabbitTemplate.convertAndSend(MqConstants.ACTIVITY_EXCHANGE, MqConstants.ACTIVITY_SIGNUP_ROUTING_KEY, msg);
+        rabbitTemplate.convertAndSend(
+                MqConstants.ACTIVITY_EXCHANGE,
+                MqConstants.ACTIVITY_SIGNUP_ROUTING_KEY,
+                msg
+        );
 
         return true;
     }
