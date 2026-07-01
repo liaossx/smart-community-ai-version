@@ -12,20 +12,20 @@ spring:
         multiplier: ${AI_RETRY_BACKOFF_MULTIPLIER:2}
         max-interval: ${AI_RETRY_BACKOFF_MAX_INTERVAL:2s}
     openai:
-      api-key: ${AI_OPENAI_API_KEY:}
-      base-url: ${AI_OPENAI_BASE_URL:https://api.openai.com}
+      api-key: ${AI_OPENAI_API_KEY}
+      base-url: ${AI_OPENAI_BASE_URL}
       chat:
         completions-path: ${AI_OPENAI_CHAT_COMPLETIONS_PATH:/v1/chat/completions}
         options:
-          model: ${AI_OPENAI_CHAT_MODEL:gpt-4.1-mini}
+          model: ${AI_OPENAI_CHAT_MODEL}
           temperature: ${AI_OPENAI_TEMPERATURE:0.1}
       embedding:
-        api-key: ${AI_EMBEDDING_OPENAI_API_KEY:${AI_OPENAI_API_KEY:}}
-        base-url: ${AI_EMBEDDING_OPENAI_BASE_URL:${AI_OPENAI_BASE_URL:https://api.openai.com}}
+        api-key: ${AI_EMBEDDING_OPENAI_API_KEY:${AI_OPENAI_API_KEY}}
+        base-url: ${AI_EMBEDDING_OPENAI_BASE_URL}
         embeddings-path: ${AI_EMBEDDING_OPENAI_EMBEDDINGS_PATH:/v1/embeddings}
         options:
-          model: ${AI_EMBEDDING_OPENAI_MODEL:text-embedding-3-small}
-          dimensions: ${AI_EMBEDDING_OPENAI_DIMENSION:1536}
+          model: ${AI_EMBEDDING_OPENAI_MODEL}
+          dimensions: ${AI_EMBEDDING_OPENAI_DIMENSION}
 
 smart-community:
   ai:
@@ -43,14 +43,14 @@ smart-community:
         username: ${AI_CUSTOMER_KNOWLEDGE_JDBC_USERNAME:${MYSQL_USERNAME:root}}
         password: ${AI_CUSTOMER_KNOWLEDGE_JDBC_PASSWORD:${MYSQL_PASSWORD:root}}
     embedding:
-      # hash 是本地演示用 Embedding Provider，用于先跑通 chunk -> vector -> MySQL 的工程链路。
-      # 后续可替换为 openai/qwen/bge 等真实 embedding provider。
+      # hash 是本地演示用 Embedding Provider，用于先跑通工程链路。
+      # openai 对接兼容 OpenAI API 的 Embedding 服务（如阿里云百炼 DashScope / DeepSeek 等）。
       provider: ${AI_EMBEDDING_PROVIDER:hash}
       hash:
         dimension: ${AI_HASH_EMBEDDING_DIMENSION:128}
       openai:
-        model: ${AI_EMBEDDING_OPENAI_MODEL:text-embedding-3-small}
-        dimension: ${AI_EMBEDDING_OPENAI_DIMENSION:1536}
+        model: ${AI_EMBEDDING_OPENAI_MODEL}
+        dimension: ${AI_EMBEDDING_OPENAI_DIMENSION}
     operations:
       provider-version: operations-ai-v1
       jdbc:

@@ -2,13 +2,12 @@ package com.lsx.ai.customer.knowledge;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -47,24 +46,17 @@ public class JdbcCommunityKnowledgeRepository implements CommunityKnowledgeRepos
             "ORDER BY d.update_time DESC, d.id DESC, c.chunk_no ASC"
     );
 
-    private final String jdbcUrl;
-    private final String username;
-    private final String password;
+    private final DataSource dataSource;
 
-    public JdbcCommunityKnowledgeRepository(
-            @Value("${smart-community.ai.customer-service.jdbc.url}") String jdbcUrl,
-            @Value("${smart-community.ai.customer-service.jdbc.username}") String username,
-            @Value("${smart-community.ai.customer-service.jdbc.password}") String password) {
-        this.jdbcUrl = jdbcUrl;
-        this.username = username;
-        this.password = password;
+    public JdbcCommunityKnowledgeRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public List<KnowledgeDocument> findAll() {
         // 这里是 RAG 的“知识加载”边界。后面接向量数据库时，通常替换这一层或 Retriever。
         List<KnowledgeDocument> documents = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(QUERY_ENABLED_CHUNKS);
              ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {

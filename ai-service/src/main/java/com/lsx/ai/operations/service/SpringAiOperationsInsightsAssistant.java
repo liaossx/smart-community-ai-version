@@ -43,7 +43,7 @@ public class SpringAiOperationsInsightsAssistant implements OperationsInsightsAs
                                                AiCallLogService aiCallLogService,
                                                @Value("${smart-community.ai.operations.provider-version:operations-ai-v1}")
                                                String providerVersion,
-                                               @Value("${spring.ai.openai.chat.options.model:unknown}")
+                                               @Value("${spring.ai.openai.chat.options.model}")
                                                String model) {
         this.chatClient = chatClientBuilder.build();
         this.normalizer = normalizer;

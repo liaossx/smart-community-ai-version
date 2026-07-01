@@ -1,4 +1,4 @@
-﻿package com.lsx.community.activity.task;
+package com.lsx.community.activity.task;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lsx.community.activity.entity.SysActivity;

@@ -17,9 +17,9 @@ public class OpenAiCompatibleEmbeddingProvider implements EmbeddingProvider {
     private volatile int dimension;
 
     public OpenAiCompatibleEmbeddingProvider(ObjectProvider<EmbeddingModel> embeddingModelProvider,
-                                             @Value("${smart-community.ai.embedding.openai.model:text-embedding-3-small}")
+                                             @Value("${smart-community.ai.embedding.openai.model}")
                                              String model,
-                                             @Value("${smart-community.ai.embedding.openai.dimension:1536}")
+                                             @Value("${smart-community.ai.embedding.openai.dimension}")
                                              Integer configuredDimension) {
         this.embeddingModel = embeddingModelProvider.getIfAvailable();
         if (this.embeddingModel == null) {
@@ -27,7 +27,11 @@ public class OpenAiCompatibleEmbeddingProvider implements EmbeddingProvider {
                     "No Spring AI EmbeddingModel bean available. Configure spring.ai.openai.embedding.* " +
                             "or switch AI_EMBEDDING_PROVIDER=hash");
         }
-        this.model = StringUtils.hasText(model) ? model : "text-embedding-3-small";
+        if (!StringUtils.hasText(model)) {
+            throw new IllegalStateException(
+                    "AI_EMBEDDING_OPENAI_MODEL is required when AI_EMBEDDING_PROVIDER=openai");
+        }
+        this.model = model;
         this.dimension = safeDimension(configuredDimension);
     }
 

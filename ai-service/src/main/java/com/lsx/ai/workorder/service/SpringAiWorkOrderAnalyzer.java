@@ -40,7 +40,7 @@ public class SpringAiWorkOrderAnalyzer implements WorkOrderAiAnalyzer {
                                      AiCallLogService aiCallLogService,
                                      @Value("${smart-community.ai.workorder.provider-version:spring-ai-v1}")
                                      String providerVersion,
-                                     @Value("${spring.ai.openai.chat.options.model:unknown}")
+                                     @Value("${spring.ai.openai.chat.options.model}")
                                      String model) {
         this.chatClient = chatClientBuilder.build();
         this.normalizer = normalizer;

@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,27 +36,21 @@ public class AiCallLogService {
     );
 
     private final boolean enabled;
-    private final String jdbcUrl;
-    private final String username;
-    private final String password;
+    private final DataSource dataSource;
     private volatile boolean tableMissing;
 
     public AiCallLogService(
             @Value("${smart-community.ai.observability.enabled:true}") boolean enabled,
-            @Value("${smart-community.ai.observability.jdbc.url}") String jdbcUrl,
-            @Value("${smart-community.ai.observability.jdbc.username}") String username,
-            @Value("${smart-community.ai.observability.jdbc.password}") String password) {
+            DataSource dataSource) {
         this.enabled = enabled;
-        this.jdbcUrl = jdbcUrl;
-        this.username = username;
-        this.password = password;
+        this.dataSource = dataSource;
     }
 
     public void record(AiCallLogEntry entry) {
         if (!enabled || tableMissing || entry == null) {
             return;
         }
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(INSERT_LOG)) {
             statement.setString(1, entry.getRequestId());
             statement.setString(2, truncate(entry.getBizType(), 40));
@@ -98,7 +92,7 @@ public class AiCallLogService {
                 "LIMIT ? OFFSET ?"
         );
 
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+        try (Connection connection = dataSource.getConnection()) {
             long total = count(connection, countSql, params);
             List<AiCallLogItem> records = queryPage(connection, querySql, params,
                     safePageSize, (safePageNum - 1) * safePageSize);

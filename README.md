@@ -1,4 +1,4 @@
-﻿# 智慧社区微服务系统 (Smart Community)
+# 智慧社区微服务系统 (Smart Community)
 
 ## 项目简介
 

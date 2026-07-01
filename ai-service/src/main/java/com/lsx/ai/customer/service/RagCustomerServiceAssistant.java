@@ -11,10 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 import java.util.List;
 import java.util.stream.IntStream;
-//编排rag的流程
+
 @Service
 public class RagCustomerServiceAssistant implements CustomerServiceAssistant {
     private static final Logger log = LoggerFactory.getLogger(RagCustomerServiceAssistant.class);
@@ -49,7 +50,7 @@ public class RagCustomerServiceAssistant implements CustomerServiceAssistant {
                                        AiCallLogService aiCallLogService,
                                        @Value("${smart-community.ai.customer-service.provider-version:rag-v1}")
                                        String providerVersion,
-                                       @Value("${spring.ai.openai.chat.options.model:unknown}")
+                                       @Value("${spring.ai.openai.chat.options.model}")
                                        String model) {
         this.chatClient = chatClientBuilder.build();
         this.retriever = retriever;
@@ -59,16 +60,26 @@ public class RagCustomerServiceAssistant implements CustomerServiceAssistant {
         this.model = model;
     }
 
+    @PostConstruct
+    void init() {
+        log.info("AI model configured: model={}, providerVersion={}", model, providerVersion);
+    }
+
     @Override
     public CustomerServiceAnswerResponse answer(CustomerServiceAskRequest request) {
+        long t0 = System.currentTimeMillis();
         AiCallLogEntry callLog = AiCallLogEntry.start("CUSTOMER_SERVICE_RAG")
                 .bizKey(request.getCommunityId() == null ? null : "communityId=" + request.getCommunityId())
                 .requestSummary(request.getQuestion());
-        // 第一步：先检索知识库。RAG 和普通 LLM 调用最大的区别就在这里。
+
+        // -- 1. retrieve --
+        long t1 = System.currentTimeMillis();
         List<RetrievedKnowledgeDocument> documents = retriever.retrieve(
                 request.getQuestion(), request.getCommunityId(), request.getTopK());
+        long t1cost = System.currentTimeMillis() - t1;
+        log.info("[TIMING] (1) retrieve: {} ms, resultCount={}", t1cost, documents.size());
+
         if (documents.isEmpty()) {
-            // 没有资料时不调用大模型，直接拒答/转人工，避免模型胡编。
             CustomerServiceAnswerResponse result =
                     normalizer.normalize(noKnowledgeAnswer(), documents, "RAG_RETRIEVAL", providerVersion, model);
             aiCallLogService.record(callLog
@@ -76,11 +87,15 @@ public class RagCustomerServiceAssistant implements CustomerServiceAssistant {
                     .status("SUCCESS")
                     .confidence(result.getConfidence())
                     .responseSummary(result.getAnswer()));
+            log.info("[TIMING] total(noKnowledge): {} ms | (1)retrieve={}",
+                    System.currentTimeMillis() - t0, t1cost);
             return result;
         }
 
         try {
-            // 第二步：把“用户问题 + 检索资料”一起拼进 Prompt，再调用大模型。
+            // -- 2. LLM call --
+            long t2 = System.currentTimeMillis();
+            String contextText = buildContext(documents);
             CustomerServiceAnswerResponse response = chatClient.prompt()
                     .system(SYSTEM_PROMPT)
                     .user(user -> user.text(String.join("\n",
@@ -89,23 +104,37 @@ public class RagCustomerServiceAssistant implements CustomerServiceAssistant {
                                     "{context}",
                                     "请只根据社区资料回答，并返回结构化对象。"))
                             .param("question", request.getQuestion())
-                            .param("context", buildContext(documents)))
+                            .param("context", contextText))
                     .call()
                     .entity(CustomerServiceAnswerResponse.class);
-            // 第三步：模型输出后做字段兜底、引用校验和 provider 元数据补全。
+            long t2cost = System.currentTimeMillis() - t2;
+            log.info("[TIMING] (2) LLM call: {} ms, contextChars={}", t2cost, contextText.length());
+
+            // -- 3. normalize --
+            long t3 = System.currentTimeMillis();
             CustomerServiceAnswerResponse result =
                     normalizer.normalize(response, documents, "SPRING_AI_RAG", providerVersion, model);
+            long t3cost = System.currentTimeMillis() - t3;
+            log.info("[TIMING] (3) normalize: {} ms", t3cost);
+
+            // -- 4. record call log --
+            long t4 = System.currentTimeMillis();
             aiCallLogService.record(callLog
                     .provider(result.getProvider(), result.getProviderVersion(), result.getModel())
                     .status("SUCCESS")
                     .confidence(result.getConfidence())
                     .retrievedSourceIds(sourceIds(documents))
                     .responseSummary(result.getAnswer()));
+            long t4cost = System.currentTimeMillis() - t4;
+            log.info("[TIMING] (4) callLog record: {} ms", t4cost);
+
+            long totalCost = System.currentTimeMillis() - t0;
+            log.info("[TIMING] total: {} ms | (1)retrieve={} (2)llm={} (3)normalize={} (4)log={}",
+                    totalCost, t1cost, t2cost, t3cost, t4cost);
             return result;
         } catch (RuntimeException ex) {
             log.warn("RAG customer service model call failed, use retrieval fallback. question={}",
                     request.getQuestion(), ex);
-            // 模型不可用时，仍然返回检索结果，让前端/客服知道查到了哪些资料。
             CustomerServiceAnswerResponse result =
                     normalizer.normalize(retrievalFallback(documents), documents, "RAG_RETRIEVAL", providerVersion, model);
             aiCallLogService.record(callLog
@@ -115,12 +144,13 @@ public class RagCustomerServiceAssistant implements CustomerServiceAssistant {
                     .retrievedSourceIds(sourceIds(documents))
                     .responseSummary(result.getAnswer())
                     .error(ex));
+            log.info("[TIMING] total(fallback): {} ms | (1)retrieve={}",
+                    System.currentTimeMillis() - t0, t1cost);
             return result;
         }
     }
 
     private String buildContext(List<RetrievedKnowledgeDocument> documents) {
-        // 把检索到的资料转换成带编号的上下文块，供 LLM 引用。
         return IntStream.range(0, documents.size())
                 .mapToObj(index -> documents.get(index).getDocument().toContextBlock(index + 1))
                 .reduce((left, right) -> left + "\n\n" + right)

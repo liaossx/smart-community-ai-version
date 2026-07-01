@@ -1,4 +1,4 @@
-﻿package com.lsx.community.activity.service.impl;
+package com.lsx.community.activity.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActivity> implements ActivityService {
@@ -126,6 +128,9 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
             }
             
             this.updateById(exist);
+            cacheActivityInfo(exist.getId(), exist.getStatus(),
+                    exist.getMaxCount() == null ? 999999 : exist.getMaxCount(),
+                    exist.getSignupCount() == null ? 0 : exist.getSignupCount());
             return exist.getId();
         } else {
             a.setCommunityId(cid);
@@ -139,6 +144,9 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
                 a.setCreateTime(LocalDateTime.now());
             }
             this.save(a);
+            cacheActivityInfo(a.getId(), a.getStatus(),
+                    a.getMaxCount() == null ? 999999 : a.getMaxCount(),
+                    a.getSignupCount() == null ? 0 : a.getSignupCount());
             return a.getId();
         }
     }
@@ -159,22 +167,43 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
 
     @Override
     public boolean join(Long activityId, Long userId) {
-        SysActivity a = this.getById(activityId);
-        if (a == null) throw new RuntimeException("活动不存在");
-
-        if (!"ONLINE".equals(a.getStatus()) && !"PUBLISHED".equals(a.getStatus())) {
-             throw new RuntimeException("活动不可报名");
-        }
-
         String stockKey = "activity:stock:" + activityId;
         String userSetKey = "activity:users:" + activityId;
+        String infoKey = "activity:info:" + activityId;
 
-        // 从 DB 算出初始库存，传给 Lua（Lua 不能访问 MySQL）
-        int maxCount = a.getMaxCount() == null ? 999999 : a.getMaxCount();
-        int currentCount = a.getSignupCount() == null ? 0 : a.getSignupCount();
-        int initialStock = maxCount - currentCount;
+        // 1. 从 Redis 读活动状态和上限（publish 时已写入），避免每次查 DB
+        Map<Object, Object> info = stringRedisTemplate.opsForHash().entries(infoKey);
+        String status;
+        int maxCount;
 
-        // === 一次 EVAL 替代原来的 4~6 次 Redis 命令 ===
+        if (!info.isEmpty()) {
+            status = (String) info.get("status");
+            maxCount = Integer.parseInt((String) info.get("maxCount"));
+        } else {
+            // 缓存未命中 → 回源 DB 一次，并回填缓存
+            SysActivity a = this.getById(activityId);
+            if (a == null) throw new RuntimeException("活动不存在");
+            status = a.getStatus();
+            maxCount = a.getMaxCount() == null ? 999999 : a.getMaxCount();
+            cacheActivityInfo(activityId, status, maxCount,
+                    a.getSignupCount() == null ? 0 : a.getSignupCount());
+        }
+
+        if (!"ONLINE".equals(status) && !"PUBLISHED".equals(status)) {
+            throw new RuntimeException("活动不可报名");
+        }
+
+        // 2. initialStock 只在 stockKey 不存在时被 Lua 使用（SET 初始化）
+        //    绝大多数请求下 stockKey 已存在 → 不需要查 DB
+        int initialStock = maxCount;
+        if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(stockKey))) {
+            SysActivity a = this.getById(activityId);
+            if (a == null) throw new RuntimeException("活动不存在");
+            int currentCount = a.getSignupCount() == null ? 0 : a.getSignupCount();
+            initialStock = maxCount - currentCount;
+        }
+
+        // 3. 一次 EVAL 完成查重 + 扣库存 + 标记用户
         @SuppressWarnings("unchecked")
         List<Object> result = stringRedisTemplate.execute(
                 joinScript,
@@ -193,7 +222,7 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
             }
         }
 
-        // Lua 执行成功后，异步发送 MQ 落库
+        // 4. 异步 MQ 落库
         ActivitySignupMessageDTO msg = new ActivitySignupMessageDTO();
         msg.setActivityId(activityId);
         msg.setUserId(userId);
@@ -204,6 +233,14 @@ public class ActivityServiceImpl extends ServiceImpl<SysActivityMapper, SysActiv
         );
 
         return true;
+    }
+
+    private void cacheActivityInfo(Long activityId, String status, int maxCount, int signupCount) {
+        Map<String, String> cache = new HashMap<>();
+        cache.put("status", status);
+        cache.put("maxCount", String.valueOf(maxCount));
+        cache.put("signupCount", String.valueOf(signupCount));
+        stringRedisTemplate.opsForHash().putAll("activity:info:" + activityId, cache);
     }
     
     @Override

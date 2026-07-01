@@ -5,13 +5,11 @@ import com.lsx.ai.knowledge.embedding.EmbeddingVector;
 import com.lsx.ai.knowledge.embedding.VectorCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,6 +18,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.sql.DataSource;
 
 @Service
 @ConditionalOnProperty(prefix = "smart-community.ai.customer-service", name = "knowledge-store", havingValue = "jdbc")
@@ -56,21 +55,14 @@ public class VectorCommunityKnowledgeRetriever {
             "ORDER BY d.update_time DESC, d.id DESC, c.chunk_no ASC"
     );
 
-    private final String jdbcUrl;
-    private final String username;
-    private final String password;
+    private final DataSource dataSource;
     private final EmbeddingProvider embeddingProvider;
     private final VectorCodec vectorCodec;
 
-    public VectorCommunityKnowledgeRetriever(
-            @Value("${smart-community.ai.customer-service.jdbc.url}") String jdbcUrl,
-            @Value("${smart-community.ai.customer-service.jdbc.username}") String username,
-            @Value("${smart-community.ai.customer-service.jdbc.password}") String password,
-            EmbeddingProvider embeddingProvider,
-            VectorCodec vectorCodec) {
-        this.jdbcUrl = jdbcUrl;
-        this.username = username;
-        this.password = password;
+    public VectorCommunityKnowledgeRetriever(DataSource dataSource,
+                                              EmbeddingProvider embeddingProvider,
+                                              VectorCodec vectorCodec) {
+        this.dataSource = dataSource;
         this.embeddingProvider = embeddingProvider;
         this.vectorCodec = vectorCodec;
     }
@@ -85,7 +77,7 @@ public class VectorCommunityKnowledgeRetriever {
         }
         int limit = safeTopK(topK);
         List<RetrievedKnowledgeDocument> results = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(QUERY_ENABLED_EMBEDDINGS)) {
             statement.setString(1, embeddingProvider.provider());
             statement.setString(2, embeddingProvider.model());
