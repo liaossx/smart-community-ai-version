@@ -1,20 +1,21 @@
 <p align="center">
   <h1 align="center">智慧社区微服务系统</h1>
-  <p align="center">Smart Community · Microservices</p>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Spring_Boot-2.7.18_|_3.5.14-brightgreen?logo=springboot" alt="Spring Boot">
-  <img src="https://img.shields.io/badge/Spring_Cloud-2021.0.5.0-blue?logo=spring" alt="Spring Cloud">
-  <img src="https://img.shields.io/badge/Java-8_|_17-orange?logo=openjdk" alt="Java">
-  <img src="https://img.shields.io/badge/DeepSeek-V4-purple?logo=openai" alt="DeepSeek">
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker" alt="Docker">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <p align="center"><b>Smart Community</b> · 面向社区物业管理的微服务 + AI 智能平台</p>
+  <p align="center">
+    <img src="https://img.shields.io/badge/Spring_Boot-2.7.18_|_3.5.14-brightgreen?logo=springboot" alt="Spring Boot">
+    <img src="https://img.shields.io/badge/Spring_Cloud-2021.0.5.0-blue?logo=spring" alt="Spring Cloud">
+    <img src="https://img.shields.io/badge/Java-8_|_17-orange?logo=openjdk" alt="Java">
+    <img src="https://img.shields.io/badge/DeepSeek-V4-purple?logo=openai" alt="DeepSeek">
+    <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker" alt="Docker">
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  </p>
 </p>
 
 ---
 
-面向社区物业管理场景的微服务项目，涵盖物业缴费、活动报名、停车管理、工单处理等传统业务模块，并在此基础上独立设计实现了一个 **AI 智能服务模块**，将大模型能力引入社区管理场景。
+## 简介
+
+本项目围绕社区物业场景，提供 **物业缴费、活动报名、停车管理、工单处理** 等全套业务微服务。在此基础上，独立设计了一个 **AI 智能服务模块**，引入大模型能力实现智能客服、工单分析、运营洞察与周报自动生成，让传统社区管理迈向智能化。
 
 > 前端仓库：[smart-community-ai](https://github.com/liaossx/smart-community-ai.git)
 
@@ -26,16 +27,35 @@
 
 <table>
   <tr>
-    <td width="50%" align="center"><b>登录</b><br/><sub>账号登录、身份校验</sub><br/><img src="./screenshots/login.png" width="100%"/></td>
-    <td width="50%" align="center"><b>首页仪表盘</b><br/><sub>物业通知、快捷入口、数据概览</sub><br/><img src="./screenshots/dashboard.png" width="100%"/></td>
+    <td width="50%" align="center">
+      <b>登录</b>
+      <br/><sub>账号登录、身份校验</sub>
+      <br/><br/><img src="./screenshots/login.png" width="100%"/>
+    </td>
+    <td width="50%" align="center">
+      <b>首页仪表盘</b>
+      <br/><sub>物业通知、快捷入口、数据概览</sub>
+      <br/><br/><img src="./screenshots/dashboard.png" width="100%"/>
+    </td>
   </tr>
   <tr>
-    <td width="50%" align="center"><b>停车管理</b><br/><sub>车辆绑定、车位详情、余额充值</sub><br/><img src="./screenshots/parking.png" width="100%"/></td>
-    <td width="50%" align="center"><b>社区活动</b><br/><sub>活动浏览、在线报名</sub><br/><img src="./screenshots/community.png" width="100%"/></td>
+    <td width="50%" align="center">
+      <b>停车管理</b>
+      <br/><sub>车辆绑定、车位详情、余额充值</sub>
+      <br/><br/><img src="./screenshots/parking.png" width="100%"/>
+    </td>
+    <td width="50%" align="center">
+      <b>社区活动</b>
+      <br/><sub>活动浏览、在线报名</sub>
+      <br/><br/><img src="./screenshots/community.png" width="100%"/>
+    </td>
   </tr>
   <tr>
-    <td width="50%" align="center"><b>AI 智能客服</b><br/><sub>社区问题咨询、RAG 混合检索回答</sub><br/><img src="./screenshots/ai-customer-service.png" width="100%"/></td>
-    <td></td>
+    <td width="50%" align="center">
+      <b>AI 智能客服</b>
+      <br/><sub>社区问题咨询、RAG 混合检索回答</sub>
+      <br/><br/><img src="./screenshots/ai-customer-service.png" width="100%"/>
+    </td>
   </tr>
 </table>
 
@@ -43,37 +63,49 @@
 
 <table>
   <tr>
-    <td width="50%" align="center"><b>物业端仪表盘</b><br/><sub>缴费管理、投诉处理、公告发布、访客登记</sub><br/><img src="./screenshots/property.png" width="100%"/></td>
-    <td width="50%" align="center"><b>工单管理</b><br/><sub>报修工单列表、派单、进度跟踪</sub><br/><img src="./screenshots/workorder.png" width="100%"/></td>
+    <td width="50%" align="center">
+      <b>物业端仪表盘</b>
+      <br/><sub>缴费管理、投诉处理、公告发布、访客登记</sub>
+      <br/><br/><img src="./screenshots/property.png" width="100%"/>
+    </td>
+    <td width="50%" align="center">
+      <b>工单管理</b>
+      <br/><sub>报修工单列表、派单、进度跟踪</sub>
+      <br/><br/><img src="./screenshots/workorder.png" width="100%"/>
+    </td>
   </tr>
   <tr>
-    <td width="50%" align="center"><b>活动管理</b><br/><sub>活动发布、报名审核、签到管理</sub><br/><img src="./screenshots/activity-management.png" width="100%"/></td>
-    <td width="50%" align="center"><b>运营洞察</b><br/><sub>多维度指标 → AI 风险识别 + 趋势预警</sub><br/><img src="./screenshots/ai-insights.png" width="100%"/></td>
+    <td width="50%" align="center">
+      <b>活动管理</b>
+      <br/><sub>活动发布、报名审核、签到管理</sub>
+      <br/><br/><img src="./screenshots/activity-management.png" width="100%"/>
+    </td>
+    <td width="50%" align="center">
+      <b>运营洞察</b>
+      <br/><sub>多维度指标 → AI 风险识别 + 趋势预警</sub>
+      <br/><br/><img src="./screenshots/ai-insights.png" width="100%"/>
+    </td>
   </tr>
   <tr>
-    <td width="50%" align="center"><b>运营周报</b><br/><sub>自动聚合数据 → AI 生成周报</sub><br/><img src="./screenshots/ai-weekly-report.png" width="100%"/></td>
-    <td width="50%" align="center"><b>知识库管理</b><br/><sub>知识文档 CRUD、Embedding 向量化</sub><br/><img src="./screenshots/ai-knowledge.png" width="100%"/></td>
+    <td width="50%" align="center">
+      <b>运营周报</b>
+      <br/><sub>自动聚合数据 → AI 生成周报</sub>
+      <br/><br/><img src="./screenshots/ai-weekly-report.png" width="100%"/>
+    </td>
+    <td width="50%" align="center">
+      <b>知识库管理</b>
+      <br/><sub>知识文档 CRUD、Embedding 向量化</sub>
+      <br/><br/><img src="./screenshots/ai-knowledge.png" width="100%"/>
+    </td>
   </tr>
   <tr>
-    <td width="50%" align="center"><b>系统管理</b><br/><sub>用户管理、操作日志、权限控制</sub><br/><img src="./screenshots/system.png" width="100%"/></td>
-    <td></td>
+    <td width="50%" align="center">
+      <b>系统管理</b>
+      <br/><sub>用户管理、操作日志、权限控制</sub>
+      <br/><br/><img src="./screenshots/system.png" width="100%"/>
+    </td>
   </tr>
 </table>
-
----
-
-## 技术栈
-
-| 层级 | 技术 |
-|---|---|
-| 框架 | Spring Boot 2.7.18 / 3.5.14（AI 模块） + Spring Cloud Alibaba 2021.0.5.0 |
-| 注册 & 配置中心 | Nacos |
-| 网关 | Spring Cloud Gateway + Sentinel 限流 |
-| 数据库 | MySQL 8.0 |
-| 缓存 & 锁 | Redis 6.2 |
-| 消息队列 | RabbitMQ 3.9 |
-| AI 模型 | DeepSeek V4（通过 Spring AI 调用） |
-| 容器化 | Docker + Docker Compose |
 
 ---
 
@@ -108,6 +140,21 @@ smart-community-ai-version/
 ```
 
 </details>
+
+---
+
+## 技术栈
+
+| 层级 | 技术 |
+|---|---|
+| 框架 | Spring Boot 2.7.18 / 3.5.14（AI 模块） + Spring Cloud Alibaba 2021.0.5.0 |
+| 注册 & 配置中心 | Nacos |
+| 网关 | Spring Cloud Gateway + Sentinel 限流 |
+| 数据库 | MySQL 8.0 |
+| 缓存 & 锁 | Redis 6.2 |
+| 消息队列 | RabbitMQ 3.9 |
+| AI 模型 | DeepSeek V4（通过 Spring AI 调用） |
+| 容器化 | Docker + Docker Compose |
 
 ---
 
