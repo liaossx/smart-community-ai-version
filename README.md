@@ -1,8 +1,66 @@
-# 智慧社区微服务系统 (Smart Community)
+<p align="center">
+  <h1 align="center">智慧社区微服务系统</h1>
+  <p align="center">Smart Community · Microservices</p>
+</p>
 
-## 项目简介
+<p align="center">
+  <img src="https://img.shields.io/badge/Spring_Boot-2.7.18_|_3.5.14-brightgreen?logo=springboot" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/Spring_Cloud-2021.0.5.0-blue?logo=spring" alt="Spring Cloud">
+  <img src="https://img.shields.io/badge/Java-8_|_17-orange?logo=openjdk" alt="Java">
+  <img src="https://img.shields.io/badge/DeepSeek-V4-purple?logo=openai" alt="DeepSeek">
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker" alt="Docker">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+</p>
+
+---
 
 面向社区物业管理场景的微服务项目，涵盖物业缴费、活动报名、停车管理、工单处理等传统业务模块，并在此基础上独立设计实现了一个 **AI 智能服务模块**，将大模型能力引入社区管理场景。
+
+> 前端仓库：[smart-community-ai](https://github.com/liaossx/smart-community-ai.git)
+
+---
+
+## 项目展示
+
+### 业主端
+
+<table>
+  <tr>
+    <td width="50%" align="center"><b>登录</b><br/><sub>账号登录、身份校验</sub><br/><img src="./screenshots/login.png" width="100%"/></td>
+    <td width="50%" align="center"><b>首页仪表盘</b><br/><sub>物业通知、快捷入口、数据概览</sub><br/><img src="./screenshots/dashboard.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>停车管理</b><br/><sub>车辆绑定、车位详情、余额充值</sub><br/><img src="./screenshots/parking.png" width="100%"/></td>
+    <td width="50%" align="center"><b>社区活动</b><br/><sub>活动浏览、在线报名</sub><br/><img src="./screenshots/community.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>AI 智能客服</b><br/><sub>社区问题咨询、RAG 混合检索回答</sub><br/><img src="./screenshots/ai-customer-service.png" width="100%"/></td>
+    <td></td>
+  </tr>
+</table>
+
+### 管理员端
+
+<table>
+  <tr>
+    <td width="50%" align="center"><b>物业端仪表盘</b><br/><sub>缴费管理、投诉处理、公告发布、访客登记</sub><br/><img src="./screenshots/property.png" width="100%"/></td>
+    <td width="50%" align="center"><b>工单管理</b><br/><sub>报修工单列表、派单、进度跟踪</sub><br/><img src="./screenshots/workorder.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>活动管理</b><br/><sub>活动发布、报名审核、签到管理</sub><br/><img src="./screenshots/activity-management.png" width="100%"/></td>
+    <td width="50%" align="center"><b>运营洞察</b><br/><sub>多维度指标 → AI 风险识别 + 趋势预警</sub><br/><img src="./screenshots/ai-insights.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>运营周报</b><br/><sub>自动聚合数据 → AI 生成周报</sub><br/><img src="./screenshots/ai-weekly-report.png" width="100%"/></td>
+    <td width="50%" align="center"><b>知识库管理</b><br/><sub>知识文档 CRUD、Embedding 向量化</sub><br/><img src="./screenshots/ai-knowledge.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>系统管理</b><br/><sub>用户管理、操作日志、权限控制</sub><br/><img src="./screenshots/system.png" width="100%"/></td>
+    <td></td>
+  </tr>
+</table>
+
+---
 
 ## 技术栈
 
@@ -17,129 +75,154 @@
 | AI 模型 | DeepSeek V4（通过 Spring AI 调用） |
 | 容器化 | Docker + Docker Compose |
 
+---
+
 ## 项目结构
+
+<details>
+<summary>点击展开完整目录树</summary>
 
 ```
 smart-community-ai-version/
-├── gateway-service/       # API 网关（路由转发、Sentinel 限流）
-├── common-module/          # 公共模块（JWT、Redis 锁工具、MQ 常量）
-├── user-service/           # 用户服务
-├── house-service/          # 房屋服务
-├── parking-service/        # 停车服务（车位管理、道闸出入、计费）
-├── property-service/       # 物业服务（缴费、投诉、公告、访客）
-├── workorder-service/      # 工单服务
-├── community-service/      # 社区互动（活动报名）
-├── system-service/         # 系统管理（日志、统计、配置）
-├── ai-service/             # AI 智能服务（Spring Boot 3.5 + Java 17）
-│   ├── customer/           #   RAG 智能客服
-│   ├── workorder/          #   工单智能分析
-│   ├── operations/         #   运营洞察 & 周报
-│   ├── knowledge/          #   知识库管理 & Embedding
-│   └── observability/      #   AI 调用可观测性
-├── nacos_config/           # Nacos 配置文件
-├── sql/                    # 数据库初始化 & AI 模块建表
-├── nginx/                  # Nginx 前端配置
-├── docs/                   # 项目文档 & 面试准备笔记
-└── docker-compose.yml      # 一键启动所有基础设施
+├── gateway-service/         # API 网关（路由转发、Sentinel 限流）
+├── common-module/           # 公共模块（JWT、Redis 锁工具、MQ 常量）
+├── user-service/            # 用户服务
+├── house-service/           # 房屋服务
+├── parking-service/         # 停车服务（车位管理、道闸出入、计费）
+├── property-service/        # 物业服务（缴费、投诉、公告、访客）
+├── workorder-service/       # 工单服务
+├── community-service/       # 社区互动（活动报名）
+├── system-service/          # 系统管理（日志、统计、配置）
+├── ai-service/              # AI 智能服务（Spring Boot 3.5 + Java 17）
+│   ├── customer/            #   RAG 智能客服
+│   ├── workorder/           #   工单智能分析
+│   ├── operations/          #   运营洞察 & 周报
+│   ├── knowledge/           #   知识库管理 & Embedding
+│   └── observability/       #   AI 调用可观测性
+├── nacos_config/            # Nacos 配置文件
+├── sql/                     # 数据库初始化 SQL
+├── nginx/                   # Nginx 前端配置
+├── scripts/                 # 开发辅助脚本
+├── docker-compose.yml       # 一键启动全部服务
+└── docker-compose.infra.yml # 仅启动中间件
 ```
 
-## 快速启动
+</details>
 
-### 1. 基础设施（Docker Compose）
-
-```bash
-docker-compose up -d
-```
-
-启动后自动创建 MySQL（端口 3306）、Redis（6379）、Nacos（8848）、RabbitMQ（5672）、Nginx（80）。
-
-MySQL 首次启动自动执行 `sql/init_all.sql` 建表。
-
-### 2. AI 模块（需额外建表 + 环境变量）
-
-AI 服务依赖独立的表结构，需手动执行：
-
-```bash
-mysql -u root -p1234 smart_community < sql/ai_knowledge_schema_v1.sql
-mysql -u root -p1234 smart_community < sql/ai_knowledge_embedding_schema_v1.sql
-mysql -u root -p1234 smart_community < sql/ai_call_log_schema_v1.sql
-```
-
-AI 服务需要的环境变量：
-
-```bash
-AI_OPENAI_API_KEY=你的DeepSeek_API_Key
-AI_OPENAI_BASE_URL=https://api.deepseek.com
-AI_OPENAI_CHAT_MODEL=deepseek-v4-flash
-AI_EMBEDDING_PROVIDER=hash          # 开发阶段用 hash，上线切 openai
-```
-
-### 3. Nacos 配置导入
-
-Nacos 启动后（http://localhost:8848/nacos，账号 nacos/nacos）：
-
-1. 在 DEFAULT_GROUP 下创建 DataId: `core-service.yaml`，内容复制 `nacos_config/core-service.yaml`
-2. Sentinel 限流规则通过 Sentinel 控制台（8858）或直接在 Nacos 创建 `sentinel-gw-flow-rules`
-
-### 4. 服务启动顺序
-
-```
-Gateway → System → User → House → Property / Workorder / Parking / Community → AI
-```
-
-AI 服务最后启动——它不依赖其他业务服务，只依赖 DeepSeek API 和 MySQL。
+---
 
 ## AI 模块能力一览
 
 | 模块 | 端点 | 功能 |
 |---|---|---|
-| RAG 智能客服 | `/api/ai/community/customer-service/ask` | 混合检索（关键字 + 向量）→ DeepSeek 回答 → Normalizer 校验 |
-| 工单智能分析 | `/api/ai/workorder/analyze` | 结构化分类 + 优先级校准 + 高危词二次判定 |
-| 运营洞察 | `/api/ai/operations/insights` | 运营指标 → AI 风险洞察 + 规则兜底 |
-| 运营周报 | `/api/ai/operations/weekly-report` | 指标聚合 → AI 周报 + 模板兜底 |
-| 知识库管理 | `/api/ai/knowledge/documents` | 知识文档 CRUD、Embedding 重建 |
+| RAG 智能客服 | `POST /api/ai/community/customer-service/ask` | 混合检索 → DeepSeek 回答 → Normalizer 校验 |
+| 工单智能分析 | `POST /api/ai/workorder/analyze` | 结构化分类 + 优先级校准 + 高危词判定 |
+| 运营洞察 | `GET /api/ai/operations/insights` | 运营指标 → AI 风险洞察 + 规则兜底 |
+| 运营周报 | `GET /api/ai/operations/weekly-report` | 指标聚合 → AI 周报 + 模板兜底 |
+| 知识库管理 | `CRUD /api/ai/knowledge/documents` | 知识文档管理、Embedding 重建 |
+
+---
 
 ## 关键技术点
 
-- **RAG 混合检索**：关键字匹配 + 向量余弦相似度，加权合并 `max(关键字, 向量×0.35)`
+- **RAG 混合检索**：关键字匹配 + 向量余弦相似度，加权合并
 - **Lua 脚本原子操作**：报名接口用 Lua 将查重、初始化库存、扣库存、标记用户合并为一次 Redis EVAL
 - **Normalizer 输出校验**：模型回答后白名单过滤 citations、限幅 confidence、补全空字段
 - **TransactionTemplate 先锁后事务**：出闸接口改编程式事务，消除分布式锁与 @Transactional 的间隙
 - **Fallback 降级策略**：AI 不可用时自动切换规则引擎保底输出
-- **定时缓存预热**：车位余量每 5 分钟主动刷入 Redis，首查 3ms
+- **定时缓存预热**：车位余量每 5 分钟主动刷入 Redis
 - **AI 可观测性**：每次大模型调用记录 bizType、耗时、token 消耗、成功/降级/失败状态
+
+---
+
+## 快速启动（Docker Compose）
+
+### 前置要求
+
+- Docker & Docker Compose
+- DeepSeek API Key（AI 模块需要，[申请地址](https://platform.deepseek.com)）
+
+### 1. 配置环境变量
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件，填入你的配置：
+
+```ini
+# 数据库和中间件密码（本地开发可用默认值）
+MYSQL_ROOT_PASSWORD=1234
+REDIS_PASSWORD=1234
+
+# JWT 签名密钥（任意长字符串）
+JWT_SECRET=mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+
+# AI 模块（必填）
+AI_OPENAI_API_KEY=你的DeepSeek_API_Key
+```
+
+### 2. 一键启动
+
+```bash
+docker-compose up -d
+```
+
+首次启动会自动完成：
+- 拉取 MySQL、Redis、Nacos、RabbitMQ 镜像
+- 构建 8 个业务服务镜像
+- 自动建表（`sql/smart_community.sql` 包含全部表结构）
+- 启动所有服务
+
+### 3. 访问
+
+| 服务 | 地址 |
+|---|---|
+| 网关（前端入口） | http://localhost |
+| Nacos 控制台 | http://localhost:8848/nacos（账号 nacos/nacos） |
+| AI 服务 | http://localhost:8090 |
+| Sentinel 控制台 | 需单独部署 |
+
+---
+
+## 手动启动（开发模式）
+
+如果你不想用 Docker 跑业务服务，只启动中间件，然后 IDE 里调试：
+
+### 1. 启动中间件
+
+```bash
+docker-compose -f docker-compose.infra.yml up -d
+```
+
+### 2. 导入 Nacos 配置
+
+Nacos 启动后，创建 `core-service.yaml`（DEFAULT_GROUP），内容参考 `nacos_config/core-service.yaml`。
+
+### 3. 设置 IDE 环境变量
+
+```
+MYSQL_PASSWORD=1234;REDIS_PASSWORD=1234;JWT_SECRET=mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+```
+
+### 4. 按顺序启动服务
+
+```
+Gateway → System → User → House → Property / Workorder / Parking / Community → AI
+```
+
+AI 服务用 Java 17，其他服务用 Java 8。
+
+---
 
 ## 端口说明
 
 | 服务 | 端口 |
 |---|---|
-| Gateway | 80 |
+| Nginx / Gateway | 80 |
 | AI Service | 8090 |
 | Nacos | 8848 |
 | Sentinel | 8858 |
 | RabbitMQ | 5672（管理面板 15672） |
 | MySQL | 3306 |
 | Redis | 6379 |
-
-## 面试准备
-
-项目 `docs/` 目录下整理了面试笔记：
-
-| 文件 | 内容 |
-|---|---|
-| `internship-interview-questions.md` | 44 道小厂高频八股题库 |
-| `internship-interview-answers.md` | 对应标准答案 |
-| `interview-prep.md` | 12 个话题模拟问答 |
-| `jvm-notes.md` | JVM 知识笔记 |
-| `threadpool-jvm-notes.md` | 线程池 + JVM 知识笔记 |
-| `sentinel-notes.md` | Sentinel 笔记 |
-| `rocketmq-rabbitmq-notes.md` | RocketMQ vs RabbitMQ |
-| `mysql-redis-interview.md` | MySQL + Redis 面试题 |
-| `ai-interview-prep.md` | AI 模块面试准备 |
-
-## 常见问题
-
-- **包名错误**：原 `core-service.yaml` 中包含 `com.lsx.core` 包名，与实际业务服务 `com.lsx.{service}` 不符，已在 `nacos_config/core-service.yaml` 中修正
-- **RabbitMQ 消息**：消费端做了幂等处理（唯一索引），重复投递不会重复创建记录
-- **支付回调被拒绝**：检查 Nacos 中的 `payment.secret` 与回调端签名是否一致
-- **AI 服务调用超时**：DeepSeek thinking mode 一次调用 10-30 秒，前端 timeout 需适配

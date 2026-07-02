@@ -10,9 +10,9 @@ param(
     [string]$MysqlPort = "3306",
     [string]$MysqlDatabase = "smart_community",
     [string]$MysqlUsername = "root",
-    [string]$MysqlPassword = "1234",
+    [string]$MysqlPassword = "",
     [string]$RedisHost = "localhost",
-    [string]$RedisPassword = "1234",
+    [string]$RedisPassword = "",
     [string]$RabbitHost = "localhost"
 )
 

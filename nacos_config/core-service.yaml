@@ -58,7 +58,7 @@ knife4j:
     version: 1.0
     contact:
       name: lsx
-      email: 2428513271@qq.com
+      email: user@example.com
 
 jwt:
   secret: ${JWT_SECRET:mySecretKeyForJWTGenerationInSmartCommunitySystem2024}

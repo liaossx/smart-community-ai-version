@@ -39,7 +39,7 @@ smart-community:
       provider-version: rag-v1
       knowledge-store: ${AI_CUSTOMER_KNOWLEDGE_STORE:static}
       jdbc:
-        url: ${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}
+        url: ${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:192.168.10.101}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}
         username: ${AI_CUSTOMER_KNOWLEDGE_JDBC_USERNAME:${MYSQL_USERNAME:root}}
         password: ${AI_CUSTOMER_KNOWLEDGE_JDBC_PASSWORD:${MYSQL_PASSWORD:root}}
     embedding:
@@ -54,13 +54,13 @@ smart-community:
     operations:
       provider-version: operations-ai-v1
       jdbc:
-        url: "${AI_OPERATIONS_JDBC_URL:${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}}"
+        url: "${AI_OPERATIONS_JDBC_URL:${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:192.168.10.101}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}}"
         username: ${AI_OPERATIONS_JDBC_USERNAME:${AI_CUSTOMER_KNOWLEDGE_JDBC_USERNAME:${MYSQL_USERNAME:root}}}
         password: ${AI_OPERATIONS_JDBC_PASSWORD:${AI_CUSTOMER_KNOWLEDGE_JDBC_PASSWORD:${MYSQL_PASSWORD:root}}}
     observability:
       enabled: ${AI_OBSERVABILITY_ENABLED:true}
       jdbc:
-        url: "${AI_OBSERVABILITY_JDBC_URL:${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}}"
+        url: "${AI_OBSERVABILITY_JDBC_URL:${AI_CUSTOMER_KNOWLEDGE_JDBC_URL:jdbc:mysql://${MYSQL_HOST:192.168.10.101}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:smart_community}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=10000}}"
         username: ${AI_OBSERVABILITY_JDBC_USERNAME:${AI_CUSTOMER_KNOWLEDGE_JDBC_USERNAME:${MYSQL_USERNAME:root}}}
         password: ${AI_OBSERVABILITY_JDBC_PASSWORD:${AI_CUSTOMER_KNOWLEDGE_JDBC_PASSWORD:${MYSQL_PASSWORD:root}}}
     knowledge:

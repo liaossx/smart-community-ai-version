@@ -8,9 +8,12 @@ target/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/workspace.xml
+.idea/shelf/
 *.iws
 *.iml
 *.ipr
+.scratch/
 
 ### Eclipse ###
 .apt_generated
@@ -33,6 +36,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Env ###
+.env
 
 ### Mac OS ###
 .DS_Store

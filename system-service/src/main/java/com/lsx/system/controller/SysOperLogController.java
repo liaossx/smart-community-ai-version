@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lsx.core.common.Result.Result;
 import com.lsx.core.common.annotation.Log;
 import com.lsx.core.common.enums.BusinessType;
+import com.lsx.core.common.dto.SysOperLogDTO;
 import com.lsx.system.entity.SysOperLog;
 import com.lsx.system.service.SysOperLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -35,13 +37,15 @@ public class SysOperLogController {
                 .like(StringUtils.isNotBlank(operName), SysOperLog::getOperName, operName)
                 .eq(status != null, SysOperLog::getStatus, status)
                 .orderByDesc(SysOperLog::getOperTime);
-        
+
         return Result.success(operLogService.page(page, wrapper));
     }
 
     @PostMapping
     @Operation(summary = "保存操作日志")
-    public Result<Boolean> save(@RequestBody SysOperLog operLog) {
+    public Result<Boolean> save(@RequestBody SysOperLogDTO dto) {
+        SysOperLog operLog = new SysOperLog();
+        BeanUtils.copyProperties(dto, operLog);
         return Result.success(operLogService.save(operLog));
     }
 

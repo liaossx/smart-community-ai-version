@@ -1,4 +1,4 @@
-﻿package com.lsx.parking.controller;
+package com.lsx.parking.controller;
 
 import com.lsx.core.common.Result.Result;
 import com.lsx.parking.dto.ParkingGateEnterDTO;

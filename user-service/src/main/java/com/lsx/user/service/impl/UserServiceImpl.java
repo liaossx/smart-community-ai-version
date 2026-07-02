@@ -434,8 +434,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         // -----------------
         
-        String pwd = StringUtils.hasText(newPassword) ? newPassword : "123456";
-        user.setPassword(jwtUtil.encryptPassword(pwd));
+        if (!StringUtils.hasText(newPassword)) {
+            throw new IllegalArgumentException("新密码不能为空");
+        }
+        user.setPassword(jwtUtil.encryptPassword(newPassword));
         user.setUpdateTime(LocalDateTime.now());
         baseMapper.updateById(user);
     }

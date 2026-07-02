@@ -20,12 +20,12 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: smart_community
       TZ: Asia/Shanghai
     volumes:
       - ./mysql/data:/var/lib/mysql
-      - ./sql/init_all.sql:/docker-entrypoint-initdb.d/01_init_all.sql
+      - ./sql/smart_community.sql:/docker-entrypoint-initdb.d/01_smart_community.sql
       - ./sql/nacos_setup.sql:/docker-entrypoint-initdb.d/02_nacos_setup.sql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max_connections=500
 
@@ -37,7 +37,7 @@ services:
       - "6379:6379"
     environment:
       TZ: Asia/Shanghai
-    command: redis-server --requirepass 1234 --appendonly yes
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
 
   nacos:
     image: docker.m.daocloud.io/nacos/nacos-server:v2.2.0
@@ -56,7 +56,7 @@ services:
       - db.num=1
       - db.url.0=jdbc:mysql://mysql:3306/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       - db.user.0=root
-      - db.password.0=1234
+      - db.password.0=${MYSQL_ROOT_PASSWORD}
     depends_on:
       - mysql
 
@@ -88,7 +88,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - mysql
         - redis
@@ -101,7 +101,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - mysql
         - redis
@@ -114,7 +114,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - mysql
         - redis
@@ -127,7 +127,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - mysql
         - redis
@@ -140,7 +140,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - nacos
 
@@ -151,7 +151,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - nacos
 
@@ -162,7 +162,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - nacos
 
@@ -175,7 +175,7 @@ services:
       environment:
         SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
         SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-        JWT_SECRET: mySecretKeyForJWTGenerationInSmartCommunitySystem2024
+        JWT_SECRET: ${JWT_SECRET}
       depends_on:
         - nacos
 

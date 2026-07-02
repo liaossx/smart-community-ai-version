@@ -2,7 +2,7 @@ spring:
   cloud:
     sentinel:
       transport:
-        dashboard: ${SENTINEL_DASHBOARD:localhost:8080}
+        dashboard: ${SENTINEL_DASHBOARD:192.168.10.101:8858}
         port: ${SENTINEL_TRANSPORT_PORT:8719}
       filter:
         enabled: true

@@ -2,7 +2,7 @@ param(
     [string]$BaseUrl = "http://localhost:80",
     [string]$AiBaseUrl = "",
     [string]$Username = "admin",
-    [string]$Password = "123456",
+    [string]$Password = "",
     [string]$Role = "super_admin",
     [int]$CommunityId = 1,
     [string]$StartDate = "2026-06-01",

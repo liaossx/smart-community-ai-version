@@ -40,7 +40,7 @@ knife4j:
     version: 1.0
 
 jwt:
-  secret: "mySecretKeyForJWTGenerationInSmartCommunitySystem2024"
+  secret: ${JWT_SECRET:mySecretKeyForJWTGenerationInSmartCommunitySystem2024}
   expiration: 86400000
 
 smart-community:
